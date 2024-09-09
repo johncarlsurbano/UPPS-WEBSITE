@@ -1,0 +1,28 @@
+@font-face {
+    font-family: InterRegular;
+    src: url(../fonts/static/Inter_28pt-Regular.ttf);
+}
+
+@font-face {
+    font-family: InterSemibold;
+    src: url(../fonts/static/Inter_28pt-SemiBold.ttf);
+}
+
+@font-face {
+    font-family: InterBold;
+    src: url(../fonts/static/Inter_28pt-ExtraBold.ttf);
+}
+
+
+*{
+    font-family: InterRegular;
+}
+
+.InterSemibold {
+    font-family: InterSemibold;
+}
+
+.InterBold{
+    font-family: InterBold;
+}
+
