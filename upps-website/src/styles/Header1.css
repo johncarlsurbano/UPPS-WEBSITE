@@ -18,3 +18,11 @@
     min-height: 1rem;
     background-color: red;
 }
+
+
+.navbar2{
+    display: flex;
+    flex-direction: row;
+    min-height: 6rem;
+    background-color: gray;
+}
