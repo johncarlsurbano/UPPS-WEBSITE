@@ -36,6 +36,26 @@ body img{
   object-fit: cover;
 }
 
+<<<<<<< HEAD
+@font-face {
+  font-family: inter18;
+  src: url(../src/fonts/static/Inter_18pt-Black.ttf);
+}
+
+@font-face {
+  font-family: interbold;
+  src: url(../src/fonts/static/Inter_18pt-Bold.ttf);
+}
+
+.inter18{
+  font-family: inter18;
+}
+
+.interbold{
+  font-family: interbold;
+}
+=======
 body button{
   
 }
+>>>>>>> 3e0bf73fc6fd8b2efa3ec2c0e8f502c40b4d628d
