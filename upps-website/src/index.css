@@ -35,3 +35,23 @@ body img{
   height: 100%;
   object-fit: cover;
 }
+
+
+@font-face {
+  font-family: inter18;
+  src: url(../src/fonts/static/Inter_18pt-Black.ttf);
+}
+
+@font-face {
+  font-family: interbold;
+  src: url(../src/fonts/static/Inter_18pt-Bold.ttf);
+}
+
+.inter18{
+  font-family: inter18;
+}
+
+.interbold{
+  font-family: interbold;
+}
+

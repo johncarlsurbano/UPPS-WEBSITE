@@ -8,7 +8,8 @@ export default {
     extend: {
       colors: {
         uppsyellow: "#f4b312",
-        uppsdarkblue: "#29176d"
+        uppsdarkblue: "#29176d",
+        uppslink: "#0066FF"
       }
 
     },

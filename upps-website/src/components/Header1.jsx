@@ -1,7 +1,7 @@
 import "../styles/Header1.css";
 import logo from "../assets/upps-website-logo.png"
 
-export const Header1 = () => {
+const Header1 = () => {
   return (
     <div className="header">
       <div className="navbar1 bg-uppsyellow">
@@ -26,3 +26,5 @@ export const Header1 = () => {
     </div>
   );
 };
+
+export default Header1;
