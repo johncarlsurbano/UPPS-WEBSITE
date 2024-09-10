@@ -1,7 +1,7 @@
 import "../styles/Header1.css";
 import logo from "../assets/upps-website-logo.png"
 
-const Header1 = () => {
+const Header1 = ({onClick}) => {
   return (
     <div className="header">
       <div className="navbar1 bg-uppsyellow">
@@ -19,7 +19,7 @@ const Header1 = () => {
           </div>
           <div className="navbar2-content-links2">
             <a className="bg-uppsyellow text-white" id="navbar2-button" href="">Dashboard</a>
-            <a id="navbar2-button-login" href="">Login</a>
+            <a id="navbar2-button-login" href="" onClick={onClick}>Login</a>
           </div>
         </div>
       </div>

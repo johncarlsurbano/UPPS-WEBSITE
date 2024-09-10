@@ -3,11 +3,10 @@ import Header1 from '../components/Header1.jsx';
 import Dropdown from '../components/Dropdown.jsx';
 import InputFields from '../components/InputFields.jsx';
 import Button from '../components/Button.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const CreateAccount = () => {
-
-
-  
+  const navigate = useNavigate();
 
 
 
@@ -59,7 +58,7 @@ const CreateAccount = () => {
 
   return (
     <div>
-      <Header1 />
+      <Header1 onClick={()=>navigate("/")} />
       <form className="flex justify-center text-center flex-col items-center mt-12 ">
         <h1>
           Create <span>Account</span>
@@ -148,7 +147,7 @@ const CreateAccount = () => {
             </div>
           </div>
         </div>
-        <Button style="text-white bg-uppsdarkblue hover:bg-uppsyellow rounded-full py-5 px-28 mb-7 mt-3" title={"Create Account"}/>
+        <Button style="text-white bg-uppsdarkblue hover:bg-uppsyellow rounded-full py-5 px-28 mb-7 mt-3" title={"Create Account"} onClick={()=>navigate("/registrationcode")}/>
       </form>
     </div>
   )
