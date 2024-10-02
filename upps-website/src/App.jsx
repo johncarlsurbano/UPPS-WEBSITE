@@ -29,6 +29,7 @@ function App() {
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/changepasswordcode" element={<ChangePasswordCode />} />
           <Route path="/donechangepassword" element={<DoneChangePassword />} />
+          <Route path="/newpassword" element={<NewPassword />} />
         </Routes>
       </BrowserRouter> 
     </>

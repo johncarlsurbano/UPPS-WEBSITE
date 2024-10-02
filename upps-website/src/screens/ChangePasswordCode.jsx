@@ -14,7 +14,7 @@ const ChangePasswordCode = () => {
             <h2 className='text-3xl text-darkblue mb-10'>you're almost done!</h2>
             <p className='text-[1.1rem]'>Please enter the verification code sent to your email to complete your <br />changing your password.</p>
             <InputFields style={"w-[20%] mt-[40px] mb-[60px]"} type={"text"} name={"code"} placeholder={"Enter Code"}/>
-            <Button type="button" style="text-white bg-uppsdarkblue hover:bg-uppsyellow rounded-full py-3.5 w-[300px] " title={"Send"} onClick={()=>navigate("/donechangepassword")}/>
+            <Button type="button" style="text-white bg-uppsdarkblue hover:bg-uppsyellow rounded-full py-3.5 w-[300px] " title={"Send"} onClick={()=>navigate("/newpassword")}/>
             
 
             </div>
