@@ -1,4 +1,4 @@
-import { Header1 } from "./Header1";
+import  Header1  from "./Header1"
 import '../styles/LandingPage.css';
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { DashboardTable } from "./Dashboard-table";

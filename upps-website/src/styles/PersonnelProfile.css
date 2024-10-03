@@ -1,0 +1,138 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.personal-profile-header{
+    height: 300px;
+    background-color: #17153a;
+    width: min(100%, 100%);
+    position: absolute;
+
+}
+
+.personal-profile-main{
+    display: flex;
+    width: min(100%, 100%);
+    position: relative;
+    top: 13rem;
+}
+
+.personal-profile-main-content{
+    display: flex;
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.personal-profile-main-content-left{
+    width: min(35%, 100%);
+}
+
+.personal-profile-main-content-left-user{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f4b213;
+    height: 350px;
+    gap: 2rem;
+    border-radius: 1rem;
+}
+
+.personal-profile-main-content-left-user-profile{
+    margin-top: 3rem;
+    height: 12rem;
+    width: 12rem;
+}
+
+.personal-profile-main-content-left-user-profile img{
+    border-radius: 100rem;
+    border: 5px solid white;
+}
+
+.personal-profile-main-content-left-account-information{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 400px;
+    margin-top: 3rem;
+}
+
+.personal-profile-main-content-left-account-information h2{
+    font-size: clamp(1rem, 3vw, 1.2rem);
+}
+
+.personal-profile-main-content-left-buttons{
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+#contact-information-table td, #other-information-table td{
+    padding-left: 1rem;
+}
+
+#submit-request, #dashboard{
+    width: min(100%, 100%);
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 100rem;
+}
+
+
+#submit-request{
+    background-color: #17153a;
+    color: white;
+}
+
+#dashboard{
+    background-color: #f4b213;
+    color: white;
+}
+
+.personal-profile-main-content-right{
+    background-color: white;
+    width: min(60%, 100%);
+    border-radius: 10px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.50);
+}
+
+
+.personal-profile-main-content-right table{
+    width: min(100%, 100%);
+    margin-top: 2rem;
+}
+
+
+.personal-profile-main-content-right table tr{
+    text-align: start;
+    border-bottom: 1px solid gray;
+    
+}
+
+.personal-profile-main-content-right table tr th{
+    text-align: start;
+    padding: 1rem 4rem;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+}
+
+
+.personal-profile-main-content-right table tr td{
+    padding: 1rem 4rem;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+}
+
+
+.personal-profile-main-content-right table tr td a{
+    background-color: #17153a;
+    color: white;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    padding: 2px 1rem;
+    border-radius: 6px;
+}
+
+

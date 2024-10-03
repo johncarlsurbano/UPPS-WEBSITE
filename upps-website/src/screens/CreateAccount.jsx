@@ -5,7 +5,7 @@ import InputFields from '../components/InputFields.jsx';
 import Button from '../components/Button.jsx';
 import { useNavigate } from 'react-router-dom';
 
-const CreateAccount = () => {
+export const CreateAccount = () => {
   const navigate = useNavigate();
 
 
