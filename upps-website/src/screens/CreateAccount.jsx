@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { post, generateRegistrationCode, login } from "../features/user.jsx";
 
-const CreateAccount = () => {
+export const CreateAccount = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
