@@ -11,7 +11,24 @@ const CreateAccount = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const user = useSelector((state) => state.user.value);
+  // CREATE USER 
+  const [user, setUser] = useState([])
+  const [error, setError] = useState("")
+  const[name, setName] = useState();
+  
+
+  const fetchUsers = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/getuser/")
+      const data = await response.json();
+      console.log(data[0].first_name)
+    } catch (error) {
+       setError(error)
+    }
+  }
+
+
 
   const passregex = new RegExp(
     "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
@@ -72,7 +89,7 @@ const CreateAccount = () => {
       <Header1 onClick={() => navigate("/")} />
       <form
         className="flex justify-center text-center flex-col items-center mt-12"
-        onSubmit={handleSubmit}
+        onSubmit={fetchUsers}
       >
         <h1>
           Create <span>Account</span>
