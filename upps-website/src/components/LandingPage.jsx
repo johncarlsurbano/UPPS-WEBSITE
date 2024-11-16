@@ -5,13 +5,16 @@ import { DashboardTable } from "./Dashboard-table";
 import { ReadyToClaimRequestStudent } from "./ReadyToClaimStudentRequest";
 import OfficeHeadProfile from '../assets/OfficeHeadProfile.png'
 import { Footer } from "./Footer";
+import { useNavigate } from "react-router-dom";
 
 
 export const LandingPage = ()=>{
+    const navigate = useNavigate();
+
     return(
         <div className="landing-page">
-            <Header1/>
-            <div className="student-dashboard-details">
+            <Header1 onClick={() => navigate("/login")}/>
+            <div clas sName="student-dashboard-details">
                 <div className="student-dashboard-details-content">
                     <div className="student-dashboard-details-content-top">
                         <h1>Student <span>Dashboard</span></h1>

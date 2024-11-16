@@ -4,26 +4,37 @@ import InputFields from "../components/InputFields.jsx";
 import Button from "../components/Button.jsx";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import axios from 'axios'
 
 const RegistrationCode = () => {
   const navigate = useNavigate();
   const [enteredCode, setEnteredCode] = useState("");
-  const user = useSelector((state) => state.user.value);
 
-  const registrationCode = useSelector(
-    (state) => state.user.value.registrationCode
-  );
+  const user = useSelector((state) => state.user.value);
+  const formData = user.user
+  const registrationCode = formData.code
+
 
   const handleChange = (e) => {
     setEnteredCode(e.target.value);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     if (enteredCode === registrationCode) {
-      alert("Code is Correct, Registration Complete");
-      navigate("/doneregister");
+       try{
+          const response = await axios.post("http://127.0.0.1:8000/api/createuser/", formData)
+          alert("Code is Correct, Registration Complete");
+          navigate("/doneregister");
+          console.log(response.data)
+        }catch(e){
+          console.error("Failed to register user:", e);
+          alert("Failed to register user. Please try again.");
+        }
     } else {
       alert("Incorrect Code, Please Try Again!");
+   
     }
   };
 

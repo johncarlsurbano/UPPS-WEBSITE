@@ -1,19 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InputFields from "../components/InputFields";
 import logo from "../assets/upps-website-logo.png";
 import Button from "../components/Button";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import axios from 'axios'
 
 const Login = () => {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [user, setUser] = useState([])
 
-  const user = useSelector((state) => state.user.value);
+  const fetchUser = async () => {
+    try{
+      const response = await axios.get('http://127.0.0.1:8000/api/getuser/')
+      setUser(response.data)
 
-  const handleEmailChange = (e) => {
+    } catch(e) {
+      console.error(`Failed to fetch user`, e);
+      alert("Failed to fetch user. Please try again later.");
+    }
+  }
+
+  const handleEmailChange = (e) => { 
     setEmail(e.target.value);
   };
 
@@ -24,19 +35,25 @@ const Login = () => {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    if (email !== user.email) {
+    const foundUser = user.find((e) => e.email === email);
+
+    if (!foundUser) {
       alert("Incorrect email. Please check your email address and try again.");
       return;
     }
 
-    if (password !== user.password) {
+    if (foundUser.password !== password) {
       alert("Incorrect password. Please check your password and try again.");
       return;
     }
 
     alert("Login successful!");
-    navigate("/homepage");
+    navigate("/landingpage");
   };
+
+  useEffect(() => {
+    fetchUser()
+  }, [])
 
   return (
     <div className="text-center items-center flex-1 h-screen flex-col flex">

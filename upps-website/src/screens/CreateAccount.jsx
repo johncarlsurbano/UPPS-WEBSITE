@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header1 from "../components/Header1.jsx";
 import Dropdown from "../components/Dropdown.jsx";
 import InputFields from "../components/InputFields.jsx";
@@ -6,7 +6,7 @@ import Button from "../components/Button.jsx";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { post, generateRegistrationCode, login } from "../features/user.jsx";
-
+import axios from "axios"
 export const CreateAccount = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -15,14 +15,37 @@ export const CreateAccount = () => {
   const [user, setUser] = useState([])
   const [error, setError] = useState("")
   const[name, setName] = useState();
-  
+  const [department, setDepartment] = useState([])
+  const [position, setPosition] = useState([])
 
-  const fetchUsers = async (e) => {
-    e.preventDefault();
+  const fetchDepartment = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/getuser/")
-      const data = await response.json();
-      console.log(data[0].first_name)
+      const response = await axios.get("http://127.0.0.1:8000/api/department/")
+      const data = response.data
+      setDepartment(data)
+
+    }catch (e) {
+      console.error(e)
+    }
+  }
+  
+  const fetchPosition = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/api/position/")
+      const data = response.data
+      setPosition(data)
+
+    }catch (e) {
+      console.error(e)
+    }
+  }
+
+  const fetchUsers = async () => {
+    
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/api/getuser/")
+      const data = response.data;
+      setUser(data)
     } catch (error) {
        setError(error)
     }
@@ -36,20 +59,21 @@ export const CreateAccount = () => {
   const emailregex = new RegExp("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    day: "1",
-    month: "January",
-    year: "2000",
-    department: "CITC",
-    position: "",
-    streetAddress: "Bontong",
-    barangay: "Camaman-an",
-    city: "Cagayan de Oro City",
-    zipCode: "",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "password": "",
+    "confirmpassword": "",
+    "day": "",
+    "month": "",
+    "year": "",
+    "city": "",
+    "barangay": "",
+    "zipcode": "",
+    "street_address": "",
+    "department": "",
+    "position": "",
+    "code": "",
   });
 
   const handleChange = (e) => {
@@ -57,11 +81,18 @@ export const CreateAccount = () => {
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const emailExist = user.some((user) => user.email === formData.email);
+
+    if (emailExist) {
+      alert("Email is already in use!")
+      return;
+    }
+    
 
     // Basic validation for password match and regex checks
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmpassword) {
       alert("Passwords do not match");
       return;
     }
@@ -76,20 +107,46 @@ export const CreateAccount = () => {
       return;
     }
 
-    dispatch(login(formData));
-    dispatch(generateRegistrationCode());
+    if (!formData.department) {
+      alert("Please select a department");
+      return;
+    }
 
-    console.log(formData);
-
+    if (!formData.position) {
+      alert("Please select a position");
+      return;
+    }
+    dispatch(post(formData))
+    dispatch(generateRegistrationCode()) 
     navigate("/registrationcode");
-  };
+    // try{
+    //   const response = await axios.post("http://127.0.0.1:8000/api/createuser/", formData)
+    //   const data = response.data
+    //   dispatch(post(formData))
+    //   dispatch(login(formData))
+    //   dispatch(generateRegistrationCode())
+    // }
+
+    // catch (error) {
+    //   console.error(error)
+    // }
+
+
+  }
+
+  useEffect (() => {
+    fetchDepartment()
+    fetchPosition()
+    fetchUsers()
+  } ,[])
+
 
   return (
     <div>
-      <Header1 onClick={() => navigate("/")} />
+      <Header1 onClick={() => navigate("/login")} />
       <form
         className="flex justify-center text-center flex-col items-center mt-12"
-        onSubmit={fetchUsers}
+        onSubmit={handleSubmit}
       >
         <h1>
           Create <span>Account</span>
@@ -102,20 +159,20 @@ export const CreateAccount = () => {
               <div>
                 <p className="text-start my-2 text-[1rem]">First Name</p>
                 <InputFields
-                  name="firstName"
+                  name="first_name"
                   type="text"
                   placeholder="First Name"
-                  value={formData.firstName}
+                  value={formData.first_name}
                   onChange={handleChange}
                 />
               </div>
               <div>
                 <p className="text-start my-2 text-[1rem]">Last Name</p>
                 <InputFields
-                  name="lastName"
+                  name="last_name"
                   type="text"
                   placeholder="Last Name"
-                  value={formData.lastName}
+                  value={formData.last_name}
                   onChange={handleChange}
                 />
               </div>
@@ -145,10 +202,10 @@ export const CreateAccount = () => {
             <div>
               <p className="text-start mb-1.5 text-[1rem]">Confirm Password</p>
               <InputFields
-                name="confirmPassword"
+                name="confirmpassword"
                 type="password"
                 placeholder="Confirm Password"
-                value={formData.confirmPassword}
+                value={formData.confirmpassword}
                 onChange={handleChange}
                 style={"w-full"}
               />
@@ -156,47 +213,56 @@ export const CreateAccount = () => {
           </div>
 
           <div>
-            <div>
+            <div className="">
               <p className="text-start my-2 text-[1rem]">Date of Birth</p>
-              <div className="flex flex-1 gap-2">
-                <Dropdown
+              <div className="flex gap-2  ">
+                <InputFields
                   name="day"
-                  items={[1, 2, 3, 4, 5]}
                   value={formData.day}
-                  handleChange={handleChange}
+                  placeholder={"Day"}
+                  onChange={handleChange}
+                  style={"w-[9.5rem]"} 
                 />
-                <Dropdown
+                <InputFields
                   name="month"
-                  items={["January", "February", "March", "April", "May"]}
+                  type="text"
+                  placeholder="Month"
                   value={formData.month}
-                  handleChange={handleChange}
+                  onChange={handleChange}
+                  style={"w-[9.5rem]"} 
                 />
-                <Dropdown
+                <InputFields
                   name="year"
-                  items={[2000, 2001, 2002, 2003, 2004]}
+                  placeholder={"Year"}
                   value={formData.year}
-                  handleChange={handleChange}
+                  onChange={handleChange}
+                  style={"w-[9.5rem]"} 
                 />
               </div>
 
               <div className="flex flex-1 gap-2">
                 <div className="w-full">
-                  <p className="text-start my-2 text-[1rem]">Department</p>
+                  <p className="text-start mb-2 text-[1rem]">Department</p>
                   <Dropdown
                     name="department"
-                    items={["CITC", "CEA", "COT", "CSM"]}
+                    items={department}
                     value={formData.department}
                     handleChange={handleChange}
+                    valueKey="id"
+                    displayKey="department_name"
+                    style={"w-[full] mb-2"}
                   />
                 </div>
                 <div className="w-full">
-                  <p className="text-start my-2 text-[1rem]">Position</p>
-                  <InputFields
+                  <p className="text-start mb-2 text-[1rem]">Position</p>
+                  <Dropdown
                     name="position"
-                    type="text"
-                    placeholder="Position"
+                    items={position}
                     value={formData.position}
-                    onChange={handleChange}
+                    handleChange={handleChange}
+                    style={"w-[full]"}
+                    displayKey="position_name"
+                    valueKey="id"
                   />
                 </div>
               </div>
@@ -204,43 +270,46 @@ export const CreateAccount = () => {
               <div className="flex flex-1 gap-2">
                 <div className="w-full">
                   <p className="text-start my-2 text-[1rem]">Street Address</p>
-                  <Dropdown
-                    name="streetAddress"
-                    items={["Bontong", "Bolonsori", "Emerald", "Gatter"]}
-                    value={formData.streetAddress}
-                    handleChange={handleChange}
-                  />
+                  <InputFields
+                  name="street_address"
+                  type="text"
+                  placeholder="Street Address"
+                  value={formData.street_address}
+                  onChange={handleChange}
+                />
                 </div>
                 <div className="w-full">
                   <p className="text-start my-2 text-[1rem]">Barangay</p>
-                  <Dropdown
-                    name="barangay"
-                    items={["Camaman-an", "Iponan", "Gusa", "Lapasan"]}
-                    value={formData.barangay}
-                    handleChange={handleChange}
+                  <InputFields
+                  name="barangay"
+                  type="text"
+                  placeholder="Barangay"
+                  value={formData.barangay}
+                  onChange={handleChange}
                   />
                 </div>
               </div>
 
               <div className="flex flex-1 gap-2">
                 <div className="w-full">
-                  <p className="text-start my-2 text-[1rem]">City</p>
-                  <Dropdown
-                    name="city"
-                    items={["Cagayan de Oro City"]}
-                    value={formData.city}
-                    handleChange={handleChange}
-                  />
+                  <p className="text-start mb-1.5 text-[1rem]">City</p>
+                  <InputFields
+                  name="city"
+                  type="text"
+                  placeholder="City"
+                  value={formData.city}
+                  onChange={handleChange}
+                />
                 </div>
                 <div className="w-full">
-                  <p className="text-start my-2 text-[1rem]">Zip Code</p>
+                  <p className="text-start mb-1.5 text-[1rem]">Zip Code</p>
                   <InputFields
-                    name="zipCode"
+                    name="zipcode"
                     type="text"
                     placeholder="Zip Code"
-                    value={formData.zipCode}
+                    value={formData.zipcode}
                     onChange={handleChange}
-                  />
+                />
                 </div>
               </div>
             </div>

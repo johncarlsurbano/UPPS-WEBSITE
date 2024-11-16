@@ -1,0 +1,117 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+input{
+  border: 1px solid black
+}
+
+.printing-request-form {
+  display: flex;
+}
+
+.printing-request-form-content {
+  display: flex;
+  flex-direction: column;
+  width: min(1400px, 100%);
+  margin: 0 auto;
+  gap: 5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.printing-request-form-content-header {
+  text-align: center;
+}
+
+.printing-request-form-content-inputs {
+  display: flex;
+  justify-content: center;
+}
+
+.printing-request-form-content-inputs input {
+  width: min(100%, 100%);
+  display: flex;
+}
+
+.printing-request-form-content-inputs-left {
+  display: flex;
+  flex-direction: column;
+  width: min(500px, 100%);
+  padding: 0rem 1rem;
+  justify-content: flex-start;
+  gap: 3rem;
+}
+
+.printing-request-form-content-inputs-left-name {
+  display: flex;
+  gap: 1rem;
+}
+
+.printing-request-form-content-inputs-left-email {
+  display: flex;
+  flex-direction: column;
+}
+
+.printing-request-form-content-inputs-left-role {
+  display: flex;
+  gap: 1rem;
+}
+
+.printing-request-form-content-inputs-right {
+  display: flex;
+  flex-direction: column;
+  width: min(500px, 100%);
+  padding: 0rem 1rem;
+  justify-content: flex-start;
+  gap: 3rem;
+}
+
+.printing-request-form-content-inputs-right-paper-details {
+  display: flex;
+  gap: 1rem;
+}
+
+.printing-request-form-content-inputs-right-duplex-quantity {
+  display: flex;
+  justify-content: space-between;
+}
+
+.printing-request-form-content-inputs-right-duplex-quantity-duplex {
+  gap: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.printing-request-form-content-inputs-right-duplex-quantity-duplex
+  input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.printing-request-form-content-inputs-right-upload-file {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#printing-upload-file {
+  padding: 0.5rem 1rem;
+  background-color: #f8b51e;
+  width: min(12rem, 100%);
+  border-radius: 100rem;
+  color: white;
+}
+
+#printing-submit-request {
+  background-color: #17153a;
+  padding: 0.5rem 1rem;
+  width: min(15rem, 100%);
+  border-radius: 100rem;
+  color: white;
+}

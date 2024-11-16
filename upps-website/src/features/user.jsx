@@ -4,39 +4,39 @@ const initialStateValue = {
   isLoggin: false,
 
   user: {
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    day: 0,
-    month: "",
-    year: 0,
-    department: "",
-    position: "",
-    streetAddress: "",
-    barangay: "",
-    city: "",
-    zipCode: 0,
-    registrationCode: "",
+    "first_name": "",
+    "last_name": "",
+    "email": "",
+    "password": "",
+    "confirmpassword": "",
+    "day": "",
+    "month": "",
+    "year": "",
+    "city": "",
+    "barangay": "",
+    "zipcode": "",
+    "street_address": "",
+    "department": "",
+    "position": "",
+    "code": "",
   },
+
 };
 
 export const userSlice = createSlice({
   name: "user",
   initialState: { value: initialStateValue },
   reducers: {
-    post: (state) => {
-      state.value;
+    post: (state, action) => {
+      state.value.user = action.payload;
     },
-    login: (state, action) => {
-      state.value = action.payload;
-      state.isLoggingIn = true;
+    login: (state) => {
+      state.isLoggiIn = true;
     },
 
     generateRegistrationCode: (state) => {
       const randomCode = Math.floor(10000 + Math.random() * 90000);
-      state.value.registrationCode = randomCode.toString();
+      state.value.user.code = randomCode.toString();
     },
   },
 });

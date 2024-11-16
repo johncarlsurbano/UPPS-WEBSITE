@@ -1,4 +1,4 @@
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -14,6 +14,7 @@ body{
   font-optical-sizing: auto;
   min-width: 100%;
   width: fit-content;
+  
 }
 
 body a, p{
@@ -55,3 +56,290 @@ body img{
   font-family: interbold;
 }
 
+
+body table {
+  width: min(100%, 100%);
+  border-collapse: collapse;
+}
+
+body table th {
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-style: none;
+  background-color: #17153a;
+  color: white;
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+}
+
+body table th,
+body table td {
+  padding: 1rem 2rem;
+}
+
+body table td {
+  border-bottom: 1px solid rgb(196, 196, 196);
+}
+
+
+
+#details-button {
+  background-color: #f4b312;
+  color: white;
+  padding: 0.4rem 1.5rem;
+  border-radius: 5px;
+}
+
+#details-button:hover {
+  background-color: #17155a;
+  cursor: pointer;
+}
+
+
+
+.dashboard-table-options {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 0.2rem 0.5rem;
+}
+
+#pending {
+  color: #195ec2;
+}
+
+#in-progress {
+  color: #f4b312;
+}
+
+#ready-to-claim {
+  color: #70c053;
+}
+
+#pending,
+#in-progress,
+#ready-to-claim {
+  font-weight: bold;
+}
+
+#ready-to-claim {
+  color: #70c053;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+
+
+#personnel-dashboard-button {
+  background-color: #17153a;
+}
+
+#personnel-dashboard-button:hover {
+  background-color: #17154a;
+}
+
+#student-dashboard-button {
+  background-color: #f4b312;
+}
+
+#student-dashboard-button:hover {
+  background-color: #fdbf13;
+}
+
+body h1 {
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: bold;
+  color: #17153a;
+}
+
+body p {
+  font-size: clamp(1.2rem, 3vw, 1.2rem);
+}
+
+
+
+.accept-button {
+  background-color: #2a8400;
+  color: white;
+  border-radius: 100rem;
+  width: min(10rem, 100%);
+  padding: 0.6rem 0rem;
+}
+
+.decline-button {
+  background-color: #ee4444;
+  color: white;
+  border-radius: 100rem;
+  width: min(10rem, 100%);
+  padding: 0.6rem 0rem;
+}
+
+#view-file-button {
+  background-color: #17155a;
+  color: white;
+  border-radius: 6px;
+  padding: 0.2rem 1rem;
+} */
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 100%;
+  min-width: fit-content;
+}
+
+body a {
+  text-decoration: none;
+}
+
+body img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+body #main-span {
+  color: #fdbf13;
+}
+
+/* body table {
+  width: min(100%, 100%);
+  border-collapse: collapse;
+}
+
+body table th {
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-style: none;
+  background-color: #17153a;
+  color: white;
+  position: sticky;
+  z-index: 1000;
+  top: 0;
+}
+
+body table th,
+body table td {
+  padding: 1rem 2rem;
+}
+
+body table td {
+  border-bottom: 1px solid rgb(196, 196, 196);
+} */
+
+/* DETAILS BUTTON GLOBAL CSS */
+
+#details-button {
+  background-color: #f4b312;
+  color: white;
+  padding: 0.4rem 1.5rem;
+  border-radius: 5px;
+}
+
+#details-button:hover {
+  background-color: #17155a;
+  cursor: pointer;
+}
+
+/* DASHBOARD SELECT GLOBAL CSS */
+
+.dashboard-table-options {
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 0.2rem 0.5rem;
+}
+
+#pending {
+  color: #195ec2;
+}
+
+#in-progress {
+  color: #f4b312;
+}
+
+#ready-to-claim {
+  color: #70c053;
+}
+
+#pending,
+#in-progress,
+#ready-to-claim {
+  font-weight: bold;
+}
+
+#ready-to-claim {
+  color: #70c053;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* DASBOARD BUTTONS GLOBAL CSS */
+
+#personnel-dashboard-button {
+  background-color: #17153a;
+}
+
+#personnel-dashboard-button:hover {
+  background-color: #17154a;
+}
+
+#student-dashboard-button {
+  background-color: #f4b312;
+}
+
+#student-dashboard-button:hover {
+  background-color: #fdbf13;
+}
+
+body h1 {
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: bold;
+  color: #17153a;
+}
+/* 
+body p {
+  font-size: clamp(1.2rem, 3vw, 1.2rem);
+} */
+
+/* BUTTON GLOBAL CSS */
+
+.accept-button {
+  background-color: #2a8400;
+  color: white;
+  border-radius: 100rem;
+  width: min(10rem, 100%);
+  padding: 0.6rem 0rem;
+}
+
+.decline-button {
+  background-color: #ee4444;
+  color: white;
+  border-radius: 100rem;
+  width: min(10rem, 100%);
+  padding: 0.6rem 0rem;
+}
+
+#view-file-button {
+  color: #17153a;
+  border-radius: 6px;
+  padding: 0.2rem 1rem;
+  border: 1px solid #17153a;
+}
+
+#view-file-button:hover {
+  color: white;
+  background-color: #17153a;
+}
