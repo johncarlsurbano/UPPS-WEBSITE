@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Header1 from "../components/Header1.jsx";
+import {HeaderNotLoggedIn} from "../components/HeaderNotLoggedIn.jsx";
 import Dropdown from "../components/Dropdown.jsx";
 import InputFields from "../components/InputFields.jsx";
 import Button from "../components/Button.jsx";
@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { post, generateRegistrationCode, login } from "../features/user.jsx";
 import axios from "axios"
+
+
 export const CreateAccount = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -40,16 +42,16 @@ export const CreateAccount = () => {
     }
   }
 
-  const fetchUsers = async () => {
+  // const fetchUsers = async () => {
     
-    try {
-      const response = await axios.get("http://127.0.0.1:8000/api/getuser/")
-      const data = response.data;
-      setUser(data)
-    } catch (error) {
-       setError(error)
-    }
-  }
+  //   try {
+  //     const response = await axios.get("http://127.0.0.1:8000/api/getuser/")
+  //     const data = response.data;
+  //     setUser(data)
+  //   } catch (error) {
+  //      setError(error)
+  //   }
+  // }
 
 
 
@@ -83,15 +85,29 @@ export const CreateAccount = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const emailExist = user.some((user) => user.email === formData.email);
+    
+    
+    // const liceoDomain = "@ustp.edu.ph";
+    // if (!formData.email.endsWith(liceoDomain)) {
+    //   alert(`Email must end with ${liceoDomain}`);
+    //   return;
+    // }
 
-    if (emailExist) {
-      alert("Email is already in use!")
+
+
+    try {
+      const emailCheckResponse = await axios.post('http://127.0.0.1:8000/api/validateemail/', { email: formData.email });
+
+      if (emailCheckResponse.data.exists) {
+        alert("Email Already Exists!");
+        return;
+      }
+    } catch (error) {
+      console.error("Error validating email:", error);
+      alert(error);
       return;
     }
-    
 
-    // Basic validation for password match and regex checks
     if (formData.password !== formData.confirmpassword) {
       alert("Passwords do not match");
       return;
@@ -116,9 +132,27 @@ export const CreateAccount = () => {
       alert("Please select a position");
       return;
     }
+
     dispatch(post(formData))
-    dispatch(generateRegistrationCode()) 
-    navigate("/registrationcode");
+
+    try {
+      const codeResponse = await axios.post("http://127.0.0.1:8000/api/generatecode/", {
+        email: formData.email,
+      });
+    
+      if (codeResponse.status === 200) {
+        alert("Registration code sent to your email!");
+        dispatch(generateRegistrationCode(codeResponse.data.code)); // Save the code in Redux
+        navigate("/registrationcode");
+      }
+    } catch (error) {
+      console.error("Error sending code:", error);
+      alert("Failed to send the registration code. Please try again.");
+      return;
+    }
+
+    
+
     // try{
     //   const response = await axios.post("http://127.0.0.1:8000/api/createuser/", formData)
     //   const data = response.data
@@ -137,13 +171,15 @@ export const CreateAccount = () => {
   useEffect (() => {
     fetchDepartment()
     fetchPosition()
-    fetchUsers()
+    // fetchUsers()
   } ,[])
+
+
 
 
   return (
     <div>
-      <Header1 onClick={() => navigate("/login")} />
+      <HeaderNotLoggedIn onClick={() => navigate("/login")} />
       <form
         className="flex justify-center text-center flex-col items-center mt-12"
         onSubmit={handleSubmit}
@@ -217,21 +253,35 @@ export const CreateAccount = () => {
               <p className="text-start my-2 text-[1rem]">Date of Birth</p>
               <div className="flex gap-2  ">
                 <InputFields
+                  type={"number"}
                   name="day"
                   value={formData.day}
                   placeholder={"Day"}
                   onChange={handleChange}
                   style={"w-[9.5rem]"} 
                 />
-                <InputFields
+                <select
                   name="month"
-                  type="text"
-                  placeholder="Month"
                   value={formData.month}
-                  onChange={handleChange}
-                  style={"w-[9.5rem]"} 
-                />
+                  onChange={(e) => handleChange(e)} // Update formData.month
+                  className="w-[9.5rem] pl-[0.5rem] rounded-[5px] border-1 h-[3.8rem]"
+                >
+                  <option value="">Select a Month</option>
+                  <option value="January">January</option>
+                  <option value="February">February</option>
+                  <option value="March">March</option>
+                  <option value="April">April</option>
+                  <option value="May">May</option>
+                  <option value="June">June</option>
+                  <option value="July">July</option>
+                  <option value="August">August</option>
+                  <option value="September">September</option>
+                  <option value="October">October</option>
+                  <option value="November">November</option>
+                  <option value="December">December</option>
+                </select>
                 <InputFields
+                  type={"number"}
                   name="year"
                   placeholder={"Year"}
                   value={formData.year}
@@ -317,7 +367,7 @@ export const CreateAccount = () => {
         </div>
 
         <Button
-          style="text-white bg-uppsdarkblue hover:bg-uppsyellow rounded-full py-5 px-28 mb-7 mt-3"
+          style="text-white bg-uppsdarkblue hover:bg-uppsyellow rounded-full py-3 px-28 mb-7 mt-3"
           title="Create Account"
           type="submit"
         />

@@ -1,9 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { useLocalStorage } from "../hooks/useLocalStorage";
+
+const {setItem, getItem, removeItem} = useLocalStorage("user")
 
 const initialStateValue = {
   isLoggin: false,
 
   user: {
+    "id": "",
     "first_name": "",
     "last_name": "",
     "email": "",
@@ -18,10 +22,11 @@ const initialStateValue = {
     "street_address": "",
     "department": "",
     "position": "",
-    "code": "",
+    "code": null,
   },
 
 };
+
 
 export const userSlice = createSlice({
   name: "user",
@@ -30,16 +35,34 @@ export const userSlice = createSlice({
     post: (state, action) => {
       state.value.user = action.payload;
     },
-    login: (state) => {
-      state.isLoggiIn = true;
+    login: (state, action) => {
+      state.value.isLoggin = true;
+      state.value.user = action.payload;
+      // const existingUsers = getItem(); // Get the current list of users
+      // setItem(action.payload); // Add the new user to the localStorage
     },
+    generateRegistrationCode: (state, action) => {
+      state.value.user.code = action.payload; 
+    },
+    logout: (state) => {
+      state.value.isLoggin = false;
+      const loggedOutUser = state.value.user;
+      // const existingUsers = getItem(); // Get the current list of users
 
-    generateRegistrationCode: (state) => {
-      const randomCode = Math.floor(10000 + Math.random() * 90000);
-      state.value.user.code = randomCode.toString();
+      // Filter out the logged-out user from the array of users
+      // const updatedUsers = existingUsers.filter(user => user.id !== loggedOutUser.id);
+      
+      // Update the localStorage with the filtered array
+      // setItem(updatedUsers);
+
+      // Reset the state for the logged-out user
+      state.value.user = initialStateValue.user;
+    },
+    updateUserData: (state, action) => {
+      state.value.user = { ...state.value.user, ...action.payload };
     },
   },
 });
 
-export const { post, generateRegistrationCode, login } = userSlice.actions;
+export const { post, generateRegistrationCode, login, logout, updateUserData } = userSlice.actions;
 export default userSlice.reducer;

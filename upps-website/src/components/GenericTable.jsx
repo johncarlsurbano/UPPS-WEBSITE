@@ -1,4 +1,9 @@
+    
+    import { useSelector } from "react-redux";
     export const GenericTable = ({ headers, data, style, thStyle }) => {
+
+      
+      
       return (
         <div className="generic-table flex justify-center">
           <div className="generic-table-main flex flex-col bg-white h-[500px] w-full max-w-[100%] rounded-lg overflow-auto shadow-lg mt-8 mb-40">

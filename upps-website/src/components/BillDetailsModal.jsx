@@ -1,7 +1,9 @@
 import React from 'react';
 
 export const BillDetailsModal = ({ requestData, onClose }) => {
-  const personnelRequest = requestData.request;
+  const personnelRequest = requestData.request_details.user;
+  const personnelRequestDetails = requestData.request_details.print_request_details
+
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
       <div className="bg-[#ffffff] p-8 rounded-xl w-11/12 max-w-lg relative shadow-2xl border border-gray-700">
@@ -35,8 +37,8 @@ export const BillDetailsModal = ({ requestData, onClose }) => {
             <p className='text-base'>{personnelRequest ? personnelRequest.email : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Requst-Type</h1>
-            <p className='text-base'>{personnelRequest ? personnelRequest.print_request_details.printing_type.printing_type_name : 'N/A'}</p>
+          <h1 className='text-xl'>Request-Type</h1>
+            <p className='text-base'>{personnelRequestDetails ? personnelRequestDetails.request_type.request_type_name : 'N/A'}</p>
           </div>
           <div>
             <h1 className='text-xl'>Request Date</h1>
@@ -49,7 +51,7 @@ export const BillDetailsModal = ({ requestData, onClose }) => {
           
           <div>
           <h1 className='text-xl'>Paper Type</h1>
-            <p className='text-base'>{personnelRequest ? personnelRequest.print_request_details.paper_type.paper_type : 'N/A'}</p>
+            <p className='text-base'>{personnelRequestDetails ? personnelRequestDetails.paper_type.paper_type : 'N/A'}</p>
           </div>
           <div>
             <h1 className='text-xl'>Payment Status</h1>

@@ -7,6 +7,7 @@ export const ExaminationPendingRequest = ({
     isTextStatus,
     proceedBill,
 }) => {
+
     const examRequestDetails = requestDetail ? requestDetail.print_request_details : null;
     
     const createdAt = requestDetail.created_at;
@@ -17,11 +18,11 @@ export const ExaminationPendingRequest = ({
 
 
     return {
-        Name: requestDetail ? `${requestDetail.first_name} ${requestDetail.last_name}` : 'N/A',
+        Name: requestDetail ? `${requestDetail.user.first_name} ${requestDetail.user.last_name}` : 'N/A',
         "Request-Date": date,
-        "Request-Type": examRequestDetails ? examRequestDetails.printing_type.printing_type_name : 'N/A',
-        Position: requestDetail ? requestDetail.position.position_name : 'N/A',
-        Department: requestDetail ? requestDetail.department.department_name : 'N/A',
+        "Request-Type": examRequestDetails ? examRequestDetails.request_type.request_type_name : 'N/A',
+        Position: requestDetail ? requestDetail.user.position.position_name : 'N/A',
+        Department: requestDetail ? requestDetail.user.department.department_name : 'N/A',
         Details: (
 
             <Button

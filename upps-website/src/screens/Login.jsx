@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import InputFields from "../components/InputFields";
 import logo from "../assets/upps-website-logo.png";
 import Button from "../components/Button";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios'
+import { useDispatch, useSelector } from "react-redux";
+import { login,post } from "../features/user"
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,28 +35,73 @@ const Login = () => {
     setPassword(e.target.value);
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/login/', {
+        'email': email,
+        'password': password
+      })
+      
 
-    const foundUser = user.find((e) => e.email === email);
+      console.log('Full API response:', response.data); // Log entire response
+      console.log('Dispatched user:', response.data.data); // Check for 'user' in the response
 
-    if (!foundUser) {
-      alert("Incorrect email. Please check your email address and try again.");
-      return;
+      if (response.data.data) {
+        const userData = response.data.data;
+        dispatch(login(userData));
+        alert("Login successful!");
+
+        const redirectTo = location.state?.from || "/";
+
+        // Redirect to the target URL or the dashboard based on role
+        if (redirectTo !== "/") {
+          navigate(redirectTo);
+        } else {
+          switch (userData.role) {
+            case "Personnel":
+              navigate("/personnel/dashboard");
+              break;
+            case "Chairman":
+              navigate("/chairman/dashboard");
+              break;
+            case "Office Head":
+              navigate("/officehead/dashboard");
+              break;
+            default:
+              alert("Unknown role. Please contact support.");
+              break;
+          }
+        }
+
+      } else {
+        console.log('User data not found in response');
+      }
+  
+    } catch (e){
+      alert(e.response?.data?.message[0] || "Login failed.");
     }
+   
 
-    if (foundUser.password !== password) {
-      alert("Incorrect password. Please check your password and try again.");
-      return;
-    }
+    // const foundUser = user.find((e) => e.email === email);
 
-    alert("Login successful!");
-    navigate("/landingpage");
+    // if (!foundUser) {
+    //   alert("Incorrect email. Please check your email address and try again.");
+    //   return;
+    // }
+
+    // if (foundUser.password !== password) {
+    //   alert("Incorrect password. Please check your password and try again.");
+    //   return;
+    // }
+
+    
   };
 
-  useEffect(() => {
-    fetchUser()
-  }, [])
+  // useEffect(() => {
+  //   fetchUser()
+  // }, [])
 
   return (
     <div className="text-center items-center flex-1 h-screen flex-col flex">

@@ -8,6 +8,9 @@ import {BillDetailsModal} from '../components/BillDetailsModal.jsx'
 import { FilterRequest } from '../components/FilterRequest.jsx'
 import {BillingForm} from './BillingForm.jsx'
 import { useNavigate } from "react-router-dom";
+import { HeaderLoggedIn } from "../components/HeaderLoggedIn.jsx";
+import  PaymentSlipRequest  from "../components/PaymentSlipRequest.jsx"
+import {PaymentSlipDetailsModal} from "../components/PaymentSlipDetailsModal.jsx"
 
 export const PrintingTransaction = () => {
   const navigate = useNavigate();
@@ -22,13 +25,29 @@ export const PrintingTransaction = () => {
   const [selectedJobOrderType, setSelectedJobOrderType] = useState('');
   const [filteredCustomer, setFilteredCustomer] = useState('');
   const [selectedBill, setSelectedBill] = useState('');
+  const [selectedPaymentSlip, setSelectedPaymentSlip] = useState(null);
+  const [paymentModalDetails, setPaymentModalDetails] = useState(false)
+
+  const [paymentSlip, setPaymentSlip] = useState([])
+  
 
   const generateBill = (requestDetail) => {
-    // <BillingForm requestData={requestDetail}/>
-    navigate("/officehead/billingform", {state: requestDetail})
-    
-    
-  }
+    const url = '/officehead/billingform'; // URL of the payment slip
+    console.log("Selected Queue Request:", requestDetail);
+  
+    // Pass data to sessionStorage first
+    sessionStorage.setItem('billData', JSON.stringify(requestDetail));
+  
+    // Add a short delay to ensure sessionStorage is updated
+    setTimeout(() => {
+      const newTab = window.open(url, '_blank'); // Open in a new tab
+      if (!newTab) {
+        console.error('Failed to open a new tab. Check browser settings.');
+      }
+    }, 100); // 100 ms delay
+  };
+
+ 
 
   const handleDetailsClick = (requestDetail) => {
     // console.log('bobo')
@@ -39,6 +58,12 @@ export const PrintingTransaction = () => {
   const handleCloseModal = () => setShowModal(false);
 
 
+  const handlePaymentSlipDetails = (requestDetail) => {
+    setSelectedPaymentSlip(requestDetail)
+    setPaymentModalDetails(true)
+  }
+
+  const handlePaymentCloseModal = () => setPaymentModalDetails(false) 
 
 
 
@@ -67,14 +92,15 @@ export const PrintingTransaction = () => {
       setRequestTypes([...new Set(billdata.map(item => item.request.print_request_details.printing_type.printing_type_name))]);
       setJobOrderTypes([...new Set(billdata.map(item => item.type))]);
 
-      const mappedData = billdata.map((requestDetail) =>
+      const sortedData = billdata.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+
+      const mappedData = sortedData.map((requestDetail) =>
         BillRequest({
             requestDetail,
             handlePaidStatus,
             handleDetailsClick,
             generateBill,
-            
-
         })
       )
 
@@ -87,19 +113,40 @@ export const PrintingTransaction = () => {
 
   }
 
+  const fetchPaymentSlip = async () => {
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/api/getstudent/paymentslip/')
+      const data = response.data
+
+      const filteredPaymentSlip = data.filter((paymentSlip) => paymentSlip.paid_status === "Paid")
+      console.log(data)
+
+      const mappedPaymentRequest = filteredPaymentSlip.map((requestDetail) => PaymentSlipRequest({
+        requestDetail,
+        handlePaymentSlipDetails
+      }))
+
+      
+      setPaymentSlip(mappedPaymentRequest)
+      
+    } catch(e) {
+      console.error("Error fetching payment slip:", e);
+    }
+  }
 
   
 
   useEffect(
     () => {
       fetchBillRequest();
+      fetchPaymentSlip();
     }, []
   )
 
   useEffect(() => {
  
       const filteredData = billRequest.filter((request) =>
-        (selectedRequestType ? request["Request-Type"] === selectedRequestType : true) &&
+        (selectedRequestType ? request["Request Type"] === selectedRequestType : true) &&
         (selectedJobOrderType ? request["Type"] === selectedJobOrderType : true) &&
         (filteredCustomer ? request["Name"].toLowerCase().match(filteredCustomer) || request["Name"].match(filteredCustomer) : true)
     );  
@@ -116,7 +163,7 @@ export const PrintingTransaction = () => {
   const printingTransactionHeaderJobOrder = [
     "Name",
     "Time-In",
-    "Request-Type",
+    "Request Type",
     "Type",
     "Status",
     "Status Update",
@@ -158,8 +205,7 @@ export const PrintingTransaction = () => {
     "Request",
     "Status",
     "Status Update",
-    "Details",
-    "Action",
+    "Details"
   ];
 
   const printingTransactionDataPaymentSlip = [
@@ -191,6 +237,7 @@ export const PrintingTransaction = () => {
 
   return (
     <>
+    <HeaderLoggedIn />
       <div className="printing-transaction  flex flex-col">
         <div className="printing-transaction-content flex flex-col m-auto my-0 w-full max-w-[1200px]">
           <h1 className=" mb-10">Billing & Job Order A</h1>
@@ -225,6 +272,7 @@ export const PrintingTransaction = () => {
               style={
                 "bg-[#f04714] text-white text-center py-[1rem] px-[2rem] self-end rounded-[5px]"
               }
+              onClick={() => navigate("/chairman/dashboard")}
             ></Button>
           </div>
 
@@ -250,9 +298,15 @@ export const PrintingTransaction = () => {
               }
             ></Button>
           </div>
+          {paymentModalDetails && selectedPaymentSlip && (
+            <PaymentSlipDetailsModal
+              requestData={selectedPaymentSlip}
+              onClose={handlePaymentCloseModal}
+            />
+          )}
           <GenericTable
             headers={printingTransactionHeaderPaymentSlip}
-            data={printingTransactionDataPaymentSlip}
+            data={paymentSlip}
             style={{backgroundColor: "#17132e" , color: "#fff"}}
           ></GenericTable>
         </div>

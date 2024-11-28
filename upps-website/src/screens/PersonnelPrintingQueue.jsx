@@ -4,6 +4,7 @@ import { QueueRequest } from "../components/QueueRequest.jsx";
 import { RequestDetailsModal } from "../components/RequestDetailsModal.jsx";
 import Alert from '../components/Alert.jsx';  
 import DashboardCounterBox from '../components/DashboardCounterBox.jsx';
+import { useNavigate } from "react-router-dom";
 
 import axios from 'axios';
 import BillRequest from "../components/BillRequest.jsx";
@@ -22,6 +23,9 @@ export const PersonnelPrintingQueue = () => {
   const [getPendingRequests, setGetPendingRequests] = useState([]);
   const [getAllRequests, setGetAllRequests] = useState([]);
   const [getBillRequest, setBillRequest] = useState([]);
+
+  const navigate = useNavigate();
+
 
   const selectInitialColor = (status) => {
     switch (status) {
@@ -57,7 +61,10 @@ console.log(removeMode)
         "description": "BillingRequest",
         "request": queueRequest
       })
+      
       const data = response.data
+
+      navigate("/officehead/transactionbill/")
 
       // setBillRequest(data);
       console.log(data)
@@ -111,13 +118,14 @@ console.log(removeMode)
 
   const fetchQueueRequests = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/displaypersonnelrequest/");
+      const response = await axios.get("http://127.0.0.1:8000/api/displaypersonnelqueue/print/");
       const filteredRequests = response.data.filter(
         (request) => request.queue_status !== "Ready to Claim"
       );
       const readyToClaimRequests = response.data.filter(
         (request) => request.queue_status === "Ready to Claim"
       );
+      console.log(response.data)
 
       const initialColors = {};
       response.data.forEach((request) => {
@@ -148,6 +156,7 @@ console.log(removeMode)
           removeRequest: removeRequestFromState,
           handleShowModal: handleShowModal,
           proceedBill,
+
         })
       );
 
@@ -188,7 +197,7 @@ console.log(removeMode)
     }
   }, [printingType]);
 
-  const headers1 = ["Name", "Time-In", "Request-Type", "Status", "Details"];
+  const headers1 = ["Name", "Time-In", "Type", "Request-Type", "Status", "Details"];
   const headers2 = ["Name", "Time-In", "Request-Type", "Status", "Details" ,"Action"];
 
 

@@ -9,6 +9,9 @@ export const BillingForm = ({requestData,route}) => {
 
   const location = useLocation()
 
+  const [request, setRequest] = useState(null);
+
+
   const fetchSignatories = async () => {
     try{
       const response = await axios.get('http://127.0.0.1:8000/api/signatories/')
@@ -19,20 +22,32 @@ export const BillingForm = ({requestData,route}) => {
       console.error("Error fetching signatories:", error);
     }
   }
-  
 
   useEffect(() => {
+    // Retrieve the data from sessionStorage
+    const storedData = sessionStorage.getItem('billData');
+    console.log(JSON.parse(storedData));
+    if (storedData) {
+      setRequest(JSON.parse(storedData));
+    } else {
+      console.error('No data found for the payment slip.');
+    }
     
-    console.log(location)
     fetchSignatories()
-    if (signatories.length > 0) {
+    // Trigger print if the data is available
+    if (storedData) {
       window.print()
     }
-  },[signatories.length])
-  
-  const request = location.state
-  const personnelRequest = location.state.request
+  }, []);
 
+  console.log(request)
+  
+  
+  const personnelRequest = request?.request_details.user
+
+  const personnelRequestDetails = request?.request_details.print_request_details
+
+  
   const currentDate = new Date().toLocaleDateString();
 
   return (
@@ -53,7 +68,7 @@ export const BillingForm = ({requestData,route}) => {
                       </th>
                     </tr>
                     <tr>
-                      <td className="py-[0.2rem] text-center text-[12px]">FM-USTP-PP-07</td>
+                      <td className="py-[0.2rem] text-center text-[12px]">{request?.documentcodenumber}</td>
                     </tr>
                   </table>
                   <table className="w-full max-w-[100%] border-black border-[1px] text-[12px]">
@@ -68,13 +83,13 @@ export const BillingForm = ({requestData,route}) => {
                     </tr>
                     <tr>
                       <td className="py-[0.2rem] border-black border-[1px] text-center">
-                        00
+                        {request?.revnumber}
                       </td>
                       <td className="py-[0.2rem] border-black border-[1px] text-center ">
-                        11/9/2024
+                        {request?.effective_date}
                       </td>
                       <td className="py-[0.2rem] border-black border-[1px] text-center">
-                        1 of 1
+                        {request?.pagenumber}
                       </td>
                     </tr>
                   </table>
@@ -116,7 +131,7 @@ export const BillingForm = ({requestData,route}) => {
                   </div>
                   <div className="flex w-full max-w-[100%] justify-between px-[2rem]">
                     <div className="form-billing-no flex flex-col justify-start">
-                      <p className="text-[clamp(1rem, 3vw, 1rem)]">{`No: ${request.job_order_number}`}</p>
+                      <p className="text-[clamp(1rem, 3vw, 1rem)]">{`No: ${request?.job_order_number}`}</p>
                     </div>
                     <div className="form-billing-date form-billing-no flex flex-col justify-start items-center">
                       <p>{currentDate}</p>
@@ -128,7 +143,7 @@ export const BillingForm = ({requestData,route}) => {
                       <p className="text-[clamp(1rem, 3vw, 1rem)] w-full max-w-[7rem]">
                         Customer:
                       </p>
-                      <p>{`${personnelRequest.first_name} ${personnelRequest.last_name}`}</p>
+                      <p>{`${personnelRequest?.first_name} ${personnelRequest?.last_name}`}</p>
                     </div>
                     <div className="flex">
                       <p className="text-[clamp(1rem, 3vw, 1rem)] w-full max-w-[7rem]">
@@ -154,20 +169,20 @@ export const BillingForm = ({requestData,route}) => {
                             Unit Cost
                           </th>
                           <th className="font-normal border-black border-[1px] py-2">
-                            Total Cost
+                            Total Cost  
                           </th>
                         </tr>
                         <tr className="text-center">
-                          <td className="border-black border-[1px] py-2 text-center">{personnelRequest.print_request_details.quantity}</td>
+                          <td className="border-black border-[1px] py-2 text-center">{personnelRequestDetails?.quantity}</td>
                           <td className="border-black border-[1px] py-2 text-center">
-                            {request.unit}
+                            {request?.unit}
                           </td>
                           <td className="border-black border-[1px] py-2 text-center">
-                            {`${personnelRequest.print_request_details.printing_type.printing_type_name} - ${personnelRequest.last_name} - ${personnelRequest.department.department_name}`}
+                            {`${personnelRequestDetails?.printing_type.printing_type_name} - ${personnelRequest?.last_name} - ${personnelRequest?.department.department_name}`}
                           </td>
-                          <td className="border-black border-[1px] py-2 text-center">{request.unitcost}</td>
+                          <td className="border-black border-[1px] py-2 text-center">{request?.unitcost}</td>
                           <td className="border-black border-[1px] py-2 text-center">
-                            {request.totalcost}
+                            {request?.totalcost}
                           </td>
                         </tr>
                       </table>

@@ -2,7 +2,8 @@
 
 # Register your models here.
 from django.contrib import admin
-from .models import PrintRequestDetails,PaperType,Position,Department,PrintingType,PersonnelPrintRequest,FileUpload,Bill,PrintingInventory
+from .models import *
+
 
 # Register your models here.
 admin.site.register(PrintRequestDetails)
@@ -14,3 +15,13 @@ admin.site.register(PersonnelPrintRequest)
 admin.site.register(FileUpload)
 admin.site.register(Bill)
 admin.site.register(PrintingInventory)
+admin.site.register(StudentPrintForm)
+admin.site.register(PaymentSlip)
+admin.site.register(BookBindingRequestDetails)
+admin.site.register(BookBindingPersonnelRequest)
+admin.site.register(BookBindingStudentRequest)
+admin.site.register(BookBindRequestType)
+admin.site.register(LaminationStudentRequest)
+admin.site.register(LaminationPersonnelRequest)
+admin.site.register(RequestType)
+admin.site.register(User)

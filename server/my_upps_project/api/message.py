@@ -7,15 +7,15 @@ def generate_request_accepted_message(instance):
         str: The formatted email message.
     """
     message = f"""
-    Dear {instance.first_name} {instance.last_name},
+    Dear {instance.user.first_name} {instance.user.last_name},
 
     We are pleased to inform you that your print request has been accepted by the Chairman. Your request has now proceeded to the queue for further processing.
 
     Here are the details of your request:
     - Request ID: {instance.id}
-    - Customer Name : {instance.first_name} {instance.last_name}
-    - Department: {instance.department.department_name}
-    - Position: {instance.position.position_name}
+    - Customer Name : {instance.user.first_name} {instance.user.last_name}
+    - Department: {instance.user.department.department_name}
+    - Position: {instance.user.position.position_name}
     - Request Type: {instance.print_request_details.printing_type.printing_type_name}
     - Paper Size: {instance.print_request_details.paper_type.paper_type}
     - Quantity: {instance.print_request_details.quantity}
@@ -27,11 +27,5 @@ def generate_request_accepted_message(instance):
 
     Thank you for your patience and cooperation.
 
-    Best regards,
-
-    Brix Daomilas  
-    Chairman, {instance.department.department_name}  
-    University of Science and Technology  
-    Email: ustpchairman@gmail.com  
     """
     return message

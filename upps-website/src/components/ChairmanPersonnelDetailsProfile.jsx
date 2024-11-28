@@ -1,8 +1,8 @@
 import personnelProfile from "../assets/tutin.jpg";
 
-export const ChairmanPersonnelDetailsProfile = ({personnelName, personnelEmail, departmentName})=>{
+export const ChairmanPersonnelDetailsProfile = ({personnelName, personnelEmail, departmentName, style})=>{
     return(
-        <div className="personnel-view-profile-details flex  w-full justify-start px-10 items-center mb-16 h-[10rem]  ">
+        <div className={`personnel-view-profile-details flex  w-full justify-start px-10 items-center mb-16 h-[10rem] ${style} `}>
             <div className="personnel-view-profile-details-image flex w-full max-w-[8rem] h-[8rem] rounded-full object-cover">
               <img
                 src={personnelProfile}
@@ -19,4 +19,4 @@ export const ChairmanPersonnelDetailsProfile = ({personnelName, personnelEmail, 
             </div>
         </div>
     )
-}
+} 

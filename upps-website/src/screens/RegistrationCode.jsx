@@ -13,16 +13,19 @@ const RegistrationCode = () => {
   const user = useSelector((state) => state.user.value);
   const formData = user.user
   const registrationCode = formData.code
+  
+  console.log(formData.code)
 
 
   const handleChange = (e) => {
     setEnteredCode(e.target.value);
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (enteredCode === registrationCode) {
+    if (enteredCode === registrationCode.toString()) {
        try{
           const response = await axios.post("http://127.0.0.1:8000/api/createuser/", formData)
           alert("Code is Correct, Registration Complete");
@@ -37,7 +40,7 @@ const RegistrationCode = () => {
    
     }
   };
-
+  console.log(typeof enteredCode, typeof registrationCode)
   return (
     <div>
       <Header onClick={() => navigate("/")} />
@@ -53,7 +56,7 @@ const RegistrationCode = () => {
         </p>
         <InputFields
           style={"w-[20%] mt-[40px] mb-[60px]"}
-          type={"text"}
+          type={"number"}
           name={"code"}
           placeholder={"Enter Code"}
           onChange={handleChange}

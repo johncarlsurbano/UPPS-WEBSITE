@@ -31,14 +31,14 @@ export const PersonnelViewDetails = ({ request, onClose, handleAccept, handleRej
 
         <div className="personnel-view-details-content flex flex-col mt-16 pl-16 pr-16 h-[100%]">
           <ChairmanPersonnelDetailsProfile
-            personnelName={`${request?.first_name || 'N/A'} ${request?.last_name || 'N/A'}`}
-            personnelEmail={request?.email || 'N/A'}
-            departmentName={request?.department?.department_name || 'N/A'}
+            personnelName={`${request?.user.first_name || 'N/A'} ${request?.user.last_name || 'N/A'}`}
+            personnelEmail={request?.user.email || 'N/A'}
+            departmentName={request?.user.department?.department_name || 'N/A'}
           />
           <div className="personnel-request-details w-full max-w-[100%]">
             <p className="text-[clamp(1rem,3vw,1.7rem)]">Request Details</p>
             <ChairmanPersonnelRequestDetails
-              requestType={printDetails?.printing_type?.printing_type_name || 'N/A'}
+              requestType={printDetails?.request_type?.request_type_name || 'N/A'}
               duplex={printDetails?.duplex || 'N/A' ? "Duplex" : "Not Duplex"}
               noPages={printDetails?.quantity || 'N/A' }
               paperSize={printDetails?.paper_type?.paper_type || 'N/A'}

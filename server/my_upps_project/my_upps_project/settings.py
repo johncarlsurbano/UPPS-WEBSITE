@@ -39,9 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
-    'api',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+    'channels',
+    
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -74,7 +76,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'my_upps_project.wsgi.application'
 
 
 # Database
@@ -146,5 +147,9 @@ EMAIL_HOST_USER = 'ustpchairman@gmail.com'
 EMAIL_HOST_PASSWORD = 'sxgc rkzm avyh ypbe'
 EMAIL_USE_TLS = True
 # EMAIL_USE_SSL = False
+
+# WSGI_APPLICATION = 'my_upps_project.wsgi.application'
+
+ASGI_APPLICATION = "my_upps_project.asgi.application"
 
 
