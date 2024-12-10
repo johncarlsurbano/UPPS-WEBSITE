@@ -4,7 +4,13 @@ import { Footer } from "./Footer";
 import { useNavigate } from "react-router-dom";
 import { HeaderNotLoggedIn } from "./HeaderNotLoggedIn";
 import { StudentDashboard } from "./StudentDashboard";
+import { useSelector } from "react-redux"
+
 export const LandingPage = () => {
+
+
+
+
   const navigate = useNavigate();
   return (
     <div className="landing-page flex flex-col">

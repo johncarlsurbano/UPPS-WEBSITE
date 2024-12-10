@@ -31,23 +31,23 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-     email = serializers.EmailField()
-     password = serializers.CharField()
+    email = serializers.EmailField()
+    password = serializers.CharField()
 
-     def validate(self,data):
-          email = data['email']
-          password = data['password']
-          
-          try:
-              user = User.objects.get(email=email)
-          except User.DoesNotExist:
-              raise serializers.ValidationError({"message": "Invalid email"})
-          
-          if not check_password(password, user.password):
-               raise serializers.ValidationError({"message": "Invalid password"})
-          
-          data['user'] = user 
-          return data
+    def validate(self, data):
+        email = data['email']
+        password = data['password']
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"message": "Invalid email"})
+        
+        if not check_password(password, user.password):  # Ensure the password comparison is happening with hashed password
+            raise serializers.ValidationError({"message": "Invalid password"})
+        
+        data['user'] = user 
+        return data
 
 
      
@@ -73,6 +73,7 @@ class PaperTypeSerializer(serializers.ModelSerializer):
      class Meta:
           model = PaperType
           fields = "__all__"
+
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -362,19 +363,16 @@ class UpdatePrintingInventorySerializer(serializers.ModelSerializer):
         read_only_fields = ['status']  # Make `status` read-only
 
     def update(self, instance, validated_data):
-        # Adjust `onHand` quantity dynamically
-        onHand_adjustment = validated_data.get('onHand', 0)
-        instance.onHand += onHand_adjustment  # Adds or subtracts based on the value
-
-        # Update the `price` in the related `PaperType` model if provided
+        # Update the `paper_type` field only
         paper_type_data = validated_data.get('paper_type')
-        if paper_type_data and 'price' in paper_type_data:
-            instance.paper_type.price = paper_type_data['price']
-            instance.paper_type.save()  # Save to persist the new price
+        if paper_type_data:
+            for attr, value in paper_type_data.items():
+                setattr(instance.paper_type, attr, value)
+            instance.paper_type.save()  # Save changes to `PaperType`
 
-        instance.save()  # Save the inventory instance to apply any changes
+        # Save the inventory instance to apply any additional changes
+        instance.save()
         return instance
-
 
     
 class AddItemPrintingSerializer(serializers.ModelSerializer):
@@ -391,9 +389,19 @@ class AddItemPrintingSerializer(serializers.ModelSerializer):
         # Find or create the PaperType instance
         paper_type, created = PaperType.objects.get_or_create(**paper_type_data)
         
-        # Create PrintingInventory instance with the associated PaperType
-        printing_inventory = PrintingInventory.objects.create(paper_type=paper_type, **validated_data)
-        return printing_inventory
+        # Check if the paper type already exists in the inventory
+        inventory_item = PrintingInventory.objects.filter(paper_type=paper_type).first()
+        
+        if inventory_item:
+            # If the item already exists, just update the onHand value by adding the new quantity
+            inventory_item.onHand += validated_data.get('onHand', 0)
+            inventory_item.save()
+            return inventory_item
+        else:
+            # If the paper type doesn't exist, create a new PrintingInventory entry
+            printing_inventory = PrintingInventory.objects.create(paper_type=paper_type, **validated_data)
+            return printing_inventory
+
         
 
 
@@ -674,7 +682,7 @@ class BillSerializer(serializers.ModelSerializer):
         if obj.request:
             print_request_details = obj.request.print_request_details
             base_price = print_request_details.paper_type.price
-            return base_price * 1.2 if print_request_details.duplex else base_price
+            return base_price
         elif obj.book_bind_request:
             book_binding_request_details = obj.book_bind_request.book_binding_request_details
             return book_binding_request_details.paper_type.price
@@ -715,60 +723,67 @@ class BillSerializer(serializers.ModelSerializer):
         return 0  # Default total cost if neither request type is available
 
     def create(self, validated_data):
-        # Create the Bill instance
-        bill = super().create(validated_data)
+          # Create the Bill instance
+          bill = super().create(validated_data)
 
-        # Handle inventory deduction based on the type of request (print or book bind)
-        if bill.request:
-            print_request_details = bill.request.print_request_details
-            paper_type = print_request_details.paper_type
-            quantity = print_request_details.quantity
-            page_count = bill.request.page_count
-            total_pages = page_count * quantity
+          # Handle inventory deduction based on the type of request (print, book bind, or lamination)
+          if bill.request:
+               print_request_details = bill.request.print_request_details
+               paper_type = print_request_details.paper_type
+               quantity = print_request_details.quantity
+               page_count = bill.request.page_count
 
-            # Retrieve or create the inventory for the paper type
-            inventory, created = PrintingInventory.objects.get_or_create(
-                paper_type=paper_type,
-                defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-            )
+               # Adjust total_pages for duplex
+               if print_request_details.duplex:
+                    total_pages = (page_count * quantity) / 2
+               else:
+                    total_pages = page_count * quantity
 
-            # Subtract the total pages from onHand and update the inventory status
-            inventory.onHand = max(0, inventory.onHand - total_pages)
-            inventory.save()
+               # Retrieve or create the inventory for the paper type
+               inventory, created = PrintingInventory.objects.get_or_create(
+                    paper_type=paper_type,
+                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
+               )
 
-        elif bill.book_bind_request:
-            book_binding_request_details = bill.book_bind_request.book_binding_request_details
-            quantity = book_binding_request_details.quantity
-            paper_type = book_binding_request_details.paper_type
-            page_count = bill.book_bind_request.page_count
-            total_pages = page_count * quantity
+               # Subtract the total pages from onHand and update the inventory status
+               inventory.onHand = max(0, inventory.onHand - math.ceil(total_pages))
+               inventory.save()
 
-            # Retrieve or create the inventory for the paper type
-            inventory, created = PrintingInventory.objects.get_or_create(
-                paper_type=paper_type,
-                defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-            )
+          elif bill.book_bind_request:
+               book_binding_request_details = bill.book_bind_request.book_binding_request_details
+               quantity = book_binding_request_details.quantity
+               paper_type = book_binding_request_details.paper_type
+               page_count = bill.book_bind_request.page_count
+               total_pages = page_count * quantity
 
-            # Subtract the total pages from onHand and update the inventory status
-            inventory.onHand = max(0, inventory.onHand - total_pages)
-            inventory.save()
+               # Retrieve or create the inventory for the paper type
+               inventory, created = PrintingInventory.objects.get_or_create(
+                    paper_type=paper_type,
+                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
+               )
 
-        elif bill.lamination_request:
-             lamination_request_details = bill.lamination_request.lamination_request_details
-             page_count = bill.lamination_request.page_count
-             quantity = lamination_request_details.quantity
-             paper_type = lamination_request_details.paper_type
-             total_pages = page_count * quantity
-                     
-             inventory, created = PrintingInventory.objects.get_or_create(
-                paper_type=paper_type,
-                defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-            ) 
-             
-             inventory.onHand = max(0, inventory.onHand - total_pages)
-             inventory.save()
+               # Subtract the total pages from onHand and update the inventory status
+               inventory.onHand = max(0, inventory.onHand - total_pages)
+               inventory.save()
 
-        return bill
+          elif bill.lamination_request:
+               lamination_request_details = bill.lamination_request.lamination_request_details
+               page_count = bill.lamination_request.page_count
+               quantity = lamination_request_details.quantity
+               paper_type = lamination_request_details.paper_type
+               total_pages = page_count * quantity
+
+               # Retrieve or create the inventory for the paper type
+               inventory, created = PrintingInventory.objects.get_or_create(
+                    paper_type=paper_type,
+                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
+               )
+
+               # Subtract the total pages from onHand and update the inventory status
+               inventory.onHand = max(0, inventory.onHand - total_pages)
+               inventory.save()
+
+          return bill
           
 
 class DisplayBillRequestDetailsSerializer(serializers.ModelSerializer):
@@ -797,7 +812,7 @@ class DisplayBillRequestDetailsSerializer(serializers.ModelSerializer):
         if obj.request:
             print_request_details = obj.request.print_request_details
             base_price = print_request_details.paper_type.price
-            return base_price * 1.2 if print_request_details.duplex else base_price
+            return base_price
         
         elif obj.book_bind_request:
             book_binding_request_details = obj.book_bind_request.book_binding_request_details
@@ -841,62 +856,67 @@ class DisplayBillRequestDetailsSerializer(serializers.ModelSerializer):
         return 0  # Default total cost if neither request type is available
 
     def create(self, validated_data):
-        # Create the Bill instance
-        bill = super().create(validated_data)
+          # Create the Bill instance
+          bill = super().create(validated_data)
 
-        # Handle inventory deduction based on the type of request (print or book bind)
-        if bill.request:
-            print_request_details = bill.request.print_request_details
-            paper_type = print_request_details.paper_type
-            quantity = print_request_details.quantity
-            page_count = bill.request.page_count
-            total_pages = page_count * quantity
+          # Handle inventory deduction based on the type of request (print, book bind, or lamination)
+          if bill.request:
+               print_request_details = bill.request.print_request_details
+               paper_type = print_request_details.paper_type
+               quantity = print_request_details.quantity
+               page_count = bill.request.page_count
 
-            # Retrieve or create the inventory for the paper type
-            inventory, created = PrintingInventory.objects.get_or_create(
-                paper_type=paper_type,
-                defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-            )
+               # Adjust total_pages for duplex
+               if print_request_details.duplex:
+                    total_pages = (page_count * quantity) / 2
+               else:
+                    total_pages = page_count * quantity
 
-            # Subtract the total pages from onHand and update the inventory status
-            inventory.onHand = max(0, inventory.onHand - total_pages)
-            inventory.save()
+               # Retrieve or create the inventory for the paper type
+               inventory, created = PrintingInventory.objects.get_or_create(
+                    paper_type=paper_type,
+                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
+               )
 
-        elif bill.book_bind_request:
-            book_binding_request_details = bill.book_bind_request.book_binding_request_details
-            quantity = book_binding_request_details.quantity
-            paper_type = book_binding_request_details.paper_type
-            page_count = bill.book_bind_request.page_count
-            total_pages = page_count * quantity
-            
+               # Subtract the total pages from onHand and update the inventory status
+               inventory.onHand = max(0, inventory.onHand - math.ceil(total_pages))
+               inventory.save()
 
-            # Retrieve or create the inventory for the paper type
-            inventory, created = PrintingInventory.objects.get_or_create(
-                paper_type=paper_type,
-                defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-            )
+          elif bill.book_bind_request:
+               book_binding_request_details = bill.book_bind_request.book_binding_request_details
+               quantity = book_binding_request_details.quantity
+               paper_type = book_binding_request_details.paper_type
+               page_count = bill.book_bind_request.page_count
+               total_pages = page_count * quantity
 
-            # Subtract the total pages from onHand and update the inventory status
-            inventory.onHand = max(0, inventory.onHand - total_pages)
-            inventory.save()
+               # Retrieve or create the inventory for the paper type
+               inventory, created = PrintingInventory.objects.get_or_create(
+                    paper_type=paper_type,
+                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
+               )
 
-        elif bill.lamination_request:
-             lamination_request_details = bill.lamination_request.lamination_request_details
-             page_count = bill.lamination_request.page_count
-             quantity = lamination_request_details.quantity
-             paper_type = lamination_request_details.paper_type
-             total_pages = page_count * quantity
-                     
-             inventory, created = PrintingInventory.objects.get_or_create(
-                paper_type=paper_type,
-                defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-            ) 
-             
-             inventory.onHand = max(0, inventory.onHand - total_pages)
-             inventory.save()
+               # Subtract the total pages from onHand and update the inventory status
+               inventory.onHand = max(0, inventory.onHand - total_pages)
+               inventory.save()
 
-        return bill
-    
+          elif bill.lamination_request:
+               lamination_request_details = bill.lamination_request.lamination_request_details
+               page_count = bill.lamination_request.page_count
+               quantity = lamination_request_details.quantity
+               paper_type = lamination_request_details.paper_type
+               total_pages = page_count * quantity
+
+               # Retrieve or create the inventory for the paper type
+               inventory, created = PrintingInventory.objects.get_or_create(
+                    paper_type=paper_type,
+                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
+               )
+
+               # Subtract the total pages from onHand and update the inventory status
+               inventory.onHand = max(0, inventory.onHand - total_pages)
+               inventory.save()
+
+          return bill    
 
 # class JobOrderSerializer(serializers.ModelSerializer):
 #     # Use SerializerMethodField to conditionally display either print or book bind request details
@@ -1172,7 +1192,7 @@ class PaymentSlipSerializer(serializers.ModelSerializer):
         if obj.request:  # Printing context
             print_request_details = obj.request.print_request_details
             base_price = print_request_details.paper_type.price
-            return round(base_price * 1.2 if print_request_details.duplex else base_price, 2)
+            return round(base_price, 2)
         elif obj.book_bind_request:  # Book-binding context
             book_binding_details = obj.book_bind_request.book_binding_request_details
             return book_binding_details.paper_type.price
@@ -1201,50 +1221,47 @@ class PaymentSlipSerializer(serializers.ModelSerializer):
         return 0  # Default in case no context is provided
 
     def update(self, instance, validated_data):
-          """Update PaymentSlip and adjust inventory."""
-          current_status = instance.paid_status
-          paymentslip = super().update(instance, validated_data)
+        current_status = instance.paid_status
+        paymentslip = super().update(instance, validated_data)
 
-     # Check if the status changed to "Paid"
-          if current_status != 'Paid' and paymentslip.paid_status == 'Paid':
-               if paymentslip.request:  # Printing context
-                    print_request_details = paymentslip.request.print_request_details
-                    paper_type = print_request_details.paper_type
-                    quantity = print_request_details.quantity or 0
-                    page_count = paymentslip.request.page_count or 0
+        if current_status != 'Paid' and paymentslip.paid_status == 'Paid':
+            if paymentslip.request:
+                print_request_details = paymentslip.request.print_request_details
+                paper_type = print_request_details.paper_type
+                quantity = print_request_details.quantity
+                page_count = paymentslip.request.page_count
+
+                # Adjust total_pages for duplex
+                if print_request_details.duplex:
+                    total_pages = (page_count * quantity) / 2
+                else:
                     total_pages = page_count * quantity
 
-               elif paymentslip.book_bind_request:  # Book-binding context
-                    book_binding_details = paymentslip.book_bind_request.book_binding_request_details
-                    quantity = book_binding_details.quantity or 0
-                    paper_type = book_binding_details.paper_type
-                    page_count = paymentslip.book_bind_request.page_count or 0
-                    total_pages = page_count * quantity
+            elif paymentslip.book_bind_request:
+                book_binding_details = paymentslip.book_bind_request.book_binding_request_details
+                paper_type = book_binding_details.paper_type
+                page_count = paymentslip.book_bind_request.page_count
+                quantity = book_binding_details.quantity
+                total_pages = page_count * quantity
 
-               elif paymentslip.lamination_request:  # Lamination context
-                    lamination_details = paymentslip.lamination_request.lamination_request_details
-                    quantity = lamination_details.quantity or 0
-                    paper_type = lamination_details.paper_type
-                    page_count = paymentslip.lamination_request.page_count or 0
-                    total_pages = page_count * quantity
+            elif paymentslip.lamination_request:
+                lamination_details = paymentslip.lamination_request.lamination_request_details
+                quantity = lamination_details.quantity
+                paper_type = lamination_details.paper_type
+                page_count = paymentslip.lamination_request.page_count
+                total_pages = page_count * quantity
 
-               else:
-                    return paymentslip  # No valid request context, exit early
+            else:
+                return paymentslip
 
-               # Update inventory
-               if paper_type:
-                    inventory, created = PrintingInventory.objects.get_or_create(
-                         paper_type=paper_type,
-                         defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-                    )
-                    if inventory.onHand >= total_pages:
-                         inventory.onHand -= total_pages
-                         inventory.status = 'In-Stock' if inventory.onHand > 0 else 'Out-of-Stock'
-                    else:
-                         raise ValueError("Insufficient inventory to process the payment.")
-                    inventory.save()
+            inventory, created = PrintingInventory.objects.get_or_create(
+                paper_type=paper_type,
+                defaults={'onHand': 0, 'status': 'Out-of-Stock'}
+            )
+            inventory.onHand = max(0, inventory.onHand - math.ceil(total_pages))
+            inventory.save()
 
-          return paymentslip
+        return paymentslip
 
 class DisplayPaymentSlipSerializer(serializers.ModelSerializer):
     request = DisplayStudentFormSerializer()
@@ -1273,7 +1290,7 @@ class DisplayPaymentSlipSerializer(serializers.ModelSerializer):
         if obj.request:  # Printing context
             print_request_details = obj.request.print_request_details
             base_price = print_request_details.paper_type.price
-            return round(base_price * 1.2 if print_request_details.duplex else base_price, 2)
+            return round(base_price, 2)
         elif obj.book_bind_request:  # Book-binding context
             book_binding_details = obj.book_bind_request.book_binding_request_details
             return book_binding_details.paper_type.price
@@ -1302,19 +1319,23 @@ class DisplayPaymentSlipSerializer(serializers.ModelSerializer):
         return 0  # Default in case no context is provided
 
     def update(self, instance, validated_data):
-        """Update PaymentSlip and adjust inventory."""
         current_status = instance.paid_status
         paymentslip = super().update(instance, validated_data)
 
         if current_status != 'Paid' and paymentslip.paid_status == 'Paid':
-            if paymentslip.request:  # Printing context
+            if paymentslip.request:
                 print_request_details = paymentslip.request.print_request_details
                 paper_type = print_request_details.paper_type
                 quantity = print_request_details.quantity
                 page_count = paymentslip.request.page_count
-                total_pages = page_count * quantity
 
-            elif paymentslip.book_bind_request:  # Book-binding context
+                # Adjust total_pages for duplex
+                if print_request_details.duplex:
+                    total_pages = (page_count * quantity) / 2
+                else:
+                    total_pages = page_count * quantity
+
+            elif paymentslip.book_bind_request:
                 book_binding_details = paymentslip.book_bind_request.book_binding_request_details
                 paper_type = book_binding_details.paper_type
                 page_count = paymentslip.book_bind_request.page_count
@@ -1322,21 +1343,20 @@ class DisplayPaymentSlipSerializer(serializers.ModelSerializer):
                 total_pages = page_count * quantity
 
             elif paymentslip.lamination_request:
-                 lamination_details = paymentslip.lamination_request.lamination_request_details
-                 quantity = lamination_details.quantity
-                 paper_type = lamination_details.paper_type
-                 page_count = paymentslip.lamination_request.page_count
-                 total_pages = page_count * quantity
+                lamination_details = paymentslip.lamination_request.lamination_request_details
+                quantity = lamination_details.quantity
+                paper_type = lamination_details.paper_type
+                page_count = paymentslip.lamination_request.page_count
+                total_pages = page_count * quantity
 
             else:
-                return paymentslip  # No context provided
+                return paymentslip
 
-            # Update inventory
             inventory, created = PrintingInventory.objects.get_or_create(
                 paper_type=paper_type,
                 defaults={'onHand': 0, 'status': 'Out-of-Stock'}
             )
-            inventory.onHand = max(0, inventory.onHand - total_pages)
+            inventory.onHand = max(0, inventory.onHand - math.ceil(total_pages))
             inventory.save()
 
         return paymentslip

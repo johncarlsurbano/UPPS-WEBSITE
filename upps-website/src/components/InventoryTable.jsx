@@ -1,5 +1,6 @@
 import { GenericTable } from "../components/GenericTable.jsx";
-import Button from "../components/Button.jsx";
+
+import Button from '../components/Button.jsx';
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { InventoryDetails } from "../components/InventoryDetails.jsx";
@@ -9,8 +10,7 @@ import { FilterRequest } from "../components/FilterRequest.jsx";
 export const InventoryTable = () => {
   const [inventory, setInventory] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [onHandValue, setOnHandValue] = useState(null);
-  const [priceValue, setPriceValue] = useState(null);
+  const [newPaperType, setNewPaperType] = useState("");
   const [editItemId, setEditItemId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [status, setStatus] = useState([]);
@@ -31,20 +31,17 @@ export const InventoryTable = () => {
       const mappedInventory = data.map((inventoryDetails) =>
         InventoryDetails({
           inventoryDetails,
-          onHandValue,
+          newPaperType,
           isEditing: inventoryDetails.id === editItemId,
           handleEdit: () =>
             handleEdit(
               inventoryDetails.id,
-              inventoryDetails.onHand,
-              inventoryDetails.paper_type.price
+              inventoryDetails.paper_type.paper_type
             ),
           handleSave,
-          handleOnHandChange,
+          handleOnChangePaperType,
           cancelEdit,
-          handleDelete,
-          priceValue,
-          handlePriceChange,
+          handleDelete
         })
       );
 
@@ -54,40 +51,31 @@ export const InventoryTable = () => {
     }
   };
 
-  const handleEdit = (id, currentValue, currentPrice) => {
-    setOnHandValue(currentValue);
-    setPriceValue(currentPrice);
+  const handleEdit = (id, currentPaperType) => {
+    setNewPaperType(currentPaperType);
     setEditItemId(id);
     setIsEditing(true);
   };
 
-  const handleOnHandChange = (value) => {
-    setOnHandValue(value);
+  const handleOnChangePaperType = (value) => {
+    setNewPaperType(value);
   };
-  console.log(onHandValue);
-
-  const handlePriceChange = (value) => {
-    setPriceValue(value);
-  };
-  console.log(priceValue);
 
   const cancelEdit = () => {
     setIsEditing(false);
     setEditItemId(null);
-    setOnHandValue(null);
+    setNewPaperType("");
   };
 
-  console.log(priceValue);
 
-  const handleSave = async (id, onHandValue, priceValue) => {
+  const handleSave = async (id, updatedPaperType) => {
     try {
       await axios.patch(
         `http://127.0.0.1:8000/api/updateinventory/printing/${id}/`,
         {
           paper_type: {
-            price: priceValue,
+            paper_type: updatedPaperType,
           },
-          onHand: onHandValue,
         }
       );
 
@@ -95,11 +83,9 @@ export const InventoryTable = () => {
     } catch (e) {
       console.error(e);
     }
-    console.log("nasave");
     setIsEditing(false);
     setEditItemId(null);
-    setOnHandValue(null);
-    setPriceValue(null);
+    setNewPaperType("");
   };
 
   const toggleModal = () => {
@@ -107,20 +93,31 @@ export const InventoryTable = () => {
   };
 
   useEffect(() => {
+    
     fetchInventory();
-  }, [isEditing, onHandValue, priceValue]);
+    const interval = setInterval(fetchInventory, 3000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, [isEditing, newPaperType]);
 
   useEffect(() => {
-    const filteredData = inventory.filter(
-      (request) =>
+    const filteredData = inventory.filter((request) => {
+      // Convert JSX to a string if needed
+      const itemName = typeof request["Item Name"] === "string" 
+        ? request["Item Name"] 
+        : request["Item Name"].props?.value || ""; // Extract value if it's an input
+  
+      return (
         (selectedStatus ? request["Status"] === selectedStatus : true) &&
-        (filteredItem
-          ? request["Item Name"].toLowerCase().match(filteredItem) ||
-            request["Item Name"].match(filteredItem)
-          : true) 
-    );
+        (filteredItem && typeof filteredItem === "string"
+          ? itemName.toLowerCase().includes(filteredItem.toLowerCase())
+          : true)
+      );
+    });
     setFilteredData(filteredData);
   }, [selectedStatus, filteredItem, inventory]);
+  
 
   const handleDelete = async (id) => {
     try {
@@ -177,6 +174,7 @@ export const InventoryTable = () => {
               selectVal={selectedStatus}
               options={status}
               handleSelectChange={setSelectedStatus}
+              style={'mb-2'}
             />
           </div>
           <Button

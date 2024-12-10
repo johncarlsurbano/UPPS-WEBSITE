@@ -12,13 +12,18 @@ from rest_framework.views import APIView
 from .utils.email_utls import send_email
 from rest_framework.exceptions import ValidationError
 import random
-
-
 from django.shortcuts import render
 
-def home(request):
-    return render(request, 'home.html')
 
+def validate_inventory(paper_type_id, total_pages_required):
+    try:
+        inventory_item = PrintingInventory.objects.get(paper_type_id=paper_type_id)
+        if inventory_item.onHand < total_pages_required:
+            raise ValidationError(
+                  f"INSUFFICIENT STOCKS FOR '{inventory_item.paper_type.paper_type}'. CANNOT PROCEED TO REQUEST."
+            )
+    except PrintingInventory.DoesNotExist:
+        raise ValidationError(f"Paper type with ID {paper_type_id} does not exist in inventory.")
 # # Create your views here.
 # @api_view(['GET'])
 # def getUser(request):
@@ -52,7 +57,8 @@ class LoginView(APIView):
             'message': 'Login Successful!',
             'data': user_data
         })
-    
+
+
 
     
 class EmailView(APIView):
@@ -99,6 +105,20 @@ class SendRegistrationCodeView(APIView):
 
         return Response({"message": "Registration code sent", "code": code}, status=status.HTTP_200_OK)
     
+class ResetPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        new_password = request.data.get('new_password')
+
+        try:
+            user = User.objects.get(email=email)
+            user.password = make_password(new_password)  # Hash the new password before saving
+            user.save()
+            return Response({'success': True, 'message': 'Password reset successfully.'}, status=status.HTTP_200_OK)
+        
+        except User.DoesNotExist:
+            return Response({'success': False, 'message': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+    
 
 class GetUserView(generics.ListAPIView):
     queryset = User.objects.all()
@@ -116,6 +136,47 @@ class UpdateUserStatusView(generics.RetrieveUpdateAPIView):
         return User.objects.filter(
             id=pk,
         )
+    
+    def patch(self, request, *args, **kwargs):
+        # Retrieve the instance to be updated
+        instance = self.get_object()
+
+        # Get the initial account status before the update
+        old_status = instance.account_status
+
+        # Perform the update using the serializer
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            # Save the updated instance
+            instance = serializer.save()
+
+            # Check the updated account_status
+            updated_status = instance.account_status
+
+            # Send email based on the updated status
+            if updated_status != old_status:  # Only send an email if the status changed
+                if updated_status == "Active":
+                    subject = "Request Accepted by the Chairman"
+                    message = f"Dear {instance.first_name},\n\nYour account has been accepted by the Chairman. You may now access the system.\n\nThank you."
+                elif updated_status == "Denied":
+                    subject = "Request Declined by the Chairman"
+                    message = f"Dear {instance.first_name},\n\nWe regret to inform you that your account has been declined by the Chairman. Please contact the department for further assistance.\n\nThank you."
+
+                # Send the email
+                try:
+                    send_mail(
+                        subject=subject,
+                        message=message,
+                        from_email="ustpchairman@gmail.com",
+                        recipient_list=[instance.email],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    return Response({"error": f"Email failed: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
 
 class UpdateUserView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
@@ -137,6 +198,31 @@ class StudentView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        print_request_details_id = request.data.get('print_request_details')
+        if not print_request_details_id:
+            return Response({"error": "Print request details are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            print_request_details = PrintRequestDetails.objects.get(id=print_request_details_id)
+        except PrintRequestDetails.DoesNotExist:
+            return Response({"error": "Print request details not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extract paper_type and quantity from PrintRequestDetails
+        paper_type = print_request_details.paper_type
+        quantity = print_request_details.quantity
+
+        if not paper_type:
+            return Response({"error": "Paper type is missing in PrintRequestDetails."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate total pages required
+        total_pages_required = page_count * quantity
+
+        # Validate inventory for total pages required
+        try:
+            validate_inventory(paper_type.id, total_pages_required)
+        except ValidationError as e:
+            return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the request
         serializer = self.get_serializer(data=request.data)
@@ -181,13 +267,31 @@ class UpdateStudentQueueStatusView(generics.RetrieveUpdateAPIView):
 
             # If the status is updated to "Ready to Claim", send email
             if new_status == "Ready to Claim":
-                personnel_request = instance.student_print_request
-                user = personnel_request.request  # Get the related user
+                student_request = instance.student_print_request
+                user = student_request.request  # Get the related user
                 email = user.email  # Get the user's email address
 
                 # Construct the email message
                 subject = "Your Print Request is Ready to Claim"
-                message = f"Dear {user.first_name} {user.last_name},\n\nYour print request is now marked as 'Ready to Claim'. You can proceed to the printing office to claim your document.\n\nThank you!"
+                message = f"""
+                        Dear {student_request.request.first_name} {student_request.request.last_name},
+
+                        We are pleased to inform you that your print request is now ready to claim. You can proceed to the printing office to collect your document.
+
+                        Here are the details of your request:
+
+                        - Customer Name: {student_request.request.first_name} {student_request.request.last_name}
+                        - Department: {student_request.request.department.department_name}
+                        - Request Type: {student_request.request.print_request_details.printing_type.printing_type_name}
+                        - Paper Size: {student_request.request.print_request_details.paper_type.paper_type}
+                        - Quantity: {student_request.request.print_request_details.quantity}
+                        - Back to Back: {student_request.request.print_request_details.duplex}
+
+                        Thank you for using our printing service.
+
+                        Best regards,
+                        The University Printing Press System
+                        """
                 from_email = "universityprintingpresssystem@gmail.com"
 
                 # Send the email
@@ -377,7 +481,25 @@ class UpdateQueueView(generics.RetrieveUpdateAPIView):
 
                 # Construct the email message
                 subject = "Your Print Request is Ready to Claim"
-                message = f"Dear {user.first_name} {user.last_name},\n\nYour print request is now marked as 'Ready to Claim'. You can proceed to the printing office to claim your document.\n\nThank you!"
+                message =  f"""
+                        Dear {user.first_name} {user.last_name},
+
+                        We are pleased to inform you that your print request is now ready to claim. You can proceed to the printing office to collect your document.
+
+                        Here are the details of your request:
+
+                        - Customer Name: {user.first_name} {user.last_name}
+                        - Department: {user.department.department_name}
+                        - Request Type: {personnel_request.print_request_details.printing_type.printing_type_name}
+                        - Paper Size: {personnel_request.print_request_details.paper_type.paper_type}
+                        - Quantity: {personnel_request.print_request_details.quantity}
+                        - Back to Back: {personnel_request.print_request_details.duplex}
+
+                        Thank you for using our printing service.
+
+                        Best regards,
+                        The University Printing Press System
+                        """
                 from_email = "universityprintingpresssystem@gmail.com"
 
                 # Send the email
@@ -419,6 +541,32 @@ class CreateRequestView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+        print_request_details_id = request.data.get('print_request_details')
+        if not print_request_details_id:
+            return Response({"error": "Print request details are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            print_request_details = PrintRequestDetails.objects.get(id=print_request_details_id)
+        except PrintRequestDetails.DoesNotExist:
+            return Response({"error": "Print request details not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extract paper_type and quantity from PrintRequestDetails
+        paper_type = print_request_details.paper_type
+        quantity = print_request_details.quantity
+
+        if not paper_type:
+            return Response({"error": "Paper type is missing in PrintRequestDetails."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate total pages required
+        total_pages_required = page_count * quantity
+
+        # Validate inventory for total pages required
+        try:
+            validate_inventory(paper_type.id, total_pages_required)
+        except ValidationError as e:
+            return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the request
         serializer = self.get_serializer(data=request.data)
@@ -565,6 +713,31 @@ class CreateBookBindPersonnelRequestView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        book_binding_request_details_id = request.data.get('book_binding_request_details')
+        if not book_binding_request_details_id:
+            return Response({"error": "Book binding request are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            book_binding_request_details = BookBindingRequestDetails.objects.get(id=book_binding_request_details_id)
+        except BookBindingRequestDetails.DoesNotExist:
+            return Response({"error": "Book binding details not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extract paper_type and quantity from PrintRequestDetails
+        paper_type = book_binding_request_details.paper_type
+        quantity = book_binding_request_details.quantity
+
+        if not paper_type:
+            return Response({"error": "Paper type is missing in Book Binding Details."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate total pages required
+        total_pages_required = page_count * quantity
+
+        # Validate inventory for total pages required
+        try:
+            validate_inventory(paper_type.id, total_pages_required)
+        except ValidationError as e:
+            return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the request
         serializer = self.get_serializer(data=request.data)
@@ -611,8 +784,25 @@ class BookBindUpdateRequestView(generics.RetrieveUpdateAPIView):
                 email = user.email  # Get the user's email address
 
                 # Construct the email message
-                subject = "Your Print Request is Ready to Claim"
-                message = f"Dear {user.first_name} {user.last_name},\n\nYour book bind request is now marked as 'Ready to Claim'. You can proceed to the printing office to claim your document.\n\nThank you!"
+                subject = "Your Book Bind Request is Ready to Claim"
+                message = f"""
+                        Dear {user.first_name} {user.last_name},
+
+                        We are pleased to inform you that your book bind request is now ready to claim. You can proceed to the printing office to collect your document.
+
+                        Here are the details of your request:
+
+                        - Customer Name: {user.first_name} {user.last_name}
+                        - Department: {user.department.department_name}
+                        - Request Type: {personnel_request.book_binding_request_details.request_type.request_type_name}
+                        - Paper Size: {personnel_request.book_binding_request_details.paper_type.paper_type}
+                        - Quantity: {personnel_request.book_binding_request_details.quantity}
+
+                        Thank you for using our book bind service.
+
+                        Best regards,
+                        The University Printing Press System
+                        """
                 from_email = "universityprintingpresssystem@gmail.com"
 
                 # Send the email
@@ -656,6 +846,32 @@ class CreateBookBindStudentRequestView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        book_binding_request_details_id = request.data.get('book_binding_request_details')
+
+        if not book_binding_request_details_id:
+            return Response({"error": "Book Bind Request details are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            book_binding_request_details = BookBindingRequestDetails.objects.get(id=book_binding_request_details_id)
+        except BookBindingRequestDetails.DoesNotExist:
+            return Response({"error": "Book Bind Request details not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extract paper_type and quantity from PrintRequestDetails
+        paper_type = book_binding_request_details.paper_type
+        quantity = book_binding_request_details.quantity
+
+        if not paper_type:
+            return Response({"error": "Paper type is missing in PrintRequestDetails."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate total pages required
+        total_pages_required = page_count * quantity
+
+        # Validate inventory for total pages required
+        try:
+            validate_inventory(paper_type.id, total_pages_required)
+        except ValidationError as e:
+            return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the request
         serializer = self.get_serializer(data=request.data)
@@ -697,13 +913,30 @@ class UpdateBookBindStudentQueueView(generics.RetrieveUpdateAPIView):
 
             # If the status is updated to "Ready to Claim", send email
             if new_status == "Ready to Claim":
-                personnel_request = instance.book_bind_student_request
-                user = personnel_request.book_bind_request  # Get the related user
+                student_request = instance.book_bind_student_request
+                user = student_request.book_bind_request  # Get the related user
                 email = user.email  # Get the user's email address
 
                 # Construct the email message
-                subject = "Your Print Request is Ready to Claim"
-                message = f"Dear {user.first_name} {user.last_name},\n\nYour print request is now marked as 'Ready to Claim'. You can proceed to the printing office to claim your document.\n\nThank you!"
+                subject = "Your Book Bind Request is Ready to Claim"
+                message = f"""
+                        Dear {user.first_name} {user.last_name},
+
+                        We are pleased to inform you that your book bind request is now ready to claim. You can proceed to the printing office to collect your document.
+
+                        Here are the details of your request:
+
+                        - Customer Name: {user.first_name} {user.last_name}
+                        - Department: {user.department.department_name}
+                        - Request Type: {user.book_binding_request_details.request_type.request_type_name}
+                        - Paper Size: {user.book_binding_request_details.paper_type.paper_type}
+                        - Quantity: {user.book_binding_request_details.quantity}
+
+                        Thank you for using our book bind service.
+
+                        Best regards,
+                        The University Printing Press System
+                        """
                 from_email = "universityprintingpresssystem@gmail.com"
 
                 # Send the email
@@ -766,6 +999,32 @@ class CreateLaminationPersonnelRequestView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        lamination_request_details_id = request.data.get('lamination_request_details')
+
+        if not lamination_request_details_id:
+            return Response({"error": "Lamination Request details are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lamination_request_details = LaminationRequestDetails.objects.get(id=lamination_request_details_id)
+        except LaminationRequestDetails.DoesNotExist:
+            return Response({"error": "Lamination details not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extract paper_type and quantity from PrintRequestDetails
+        paper_type = lamination_request_details.paper_type
+        quantity = lamination_request_details.quantity
+
+        if not paper_type:
+            return Response({"error": "Paper type is missing in PrintRequestDetails."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate total pages required
+        total_pages_required = page_count * quantity
+
+        # Validate inventory for total pages required
+        try:
+            validate_inventory(paper_type.id, total_pages_required)
+        except ValidationError as e:
+            return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the request
         serializer = self.get_serializer(data=request.data)
@@ -812,8 +1071,25 @@ class LaminationUpdateRequestView(generics.RetrieveUpdateAPIView):
                 email = user.email  # Get the user's email address
 
                 # Construct the email message
-                subject = "Your Print Request is Ready to Claim"
-                message = f"Dear {user.first_name} {user.last_name},\n\nYour lamination request is now marked as 'Ready to Claim'. You can proceed to the printing office to claim your document.\n\nThank you!"
+                subject = "Your Lamination is Ready to Claim"
+                message = f"""
+                        Dear {user.first_name} {user.last_name},
+
+                        We are pleased to inform you that your lamination request is now ready to claim. You can proceed to the printing office to collect your document.
+
+                        Here are the details of your request:
+
+                        - Customer Name: {user.first_name} {user.last_name}
+                        - Department: {user.department.department_name}
+                        - Request Type: {personnel_request.lamination_request_details.request_type.request_type_name}
+                        - Paper Size: {personnel_request.lamination_request_details.paper_type.paper_type}
+                        - Quantity: {personnel_request.lamination_request_details.quantity}
+
+                        Thank you for using our lamination service.
+
+                        Best regards,
+                        The University Printing Press System
+                        """
                 from_email = "universityprintingpresssystem@gmail.com"
 
                 # Send the email
@@ -854,6 +1130,32 @@ class CreateLaminationStudentRequestView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        lamination_request_details_id = request.data.get('lamination_request_details')
+
+        if not lamination_request_details_id:
+            return Response({"error": "Lamination request details are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lamination_request_details = LaminationRequestDetails.objects.get(id=lamination_request_details_id)
+        except LaminationRequestDetails.DoesNotExist:
+            return Response({"error": "Lamination request details not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Extract paper_type and quantity from PrintRequestDetails
+        paper_type = lamination_request_details.paper_type
+        quantity = lamination_request_details.quantity
+
+        if not paper_type:
+            return Response({"error": "Paper type is missing in PrintRequestDetails."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate total pages required
+        total_pages_required = page_count * quantity
+
+        # Validate inventory for total pages required
+        try:
+            validate_inventory(paper_type.id, total_pages_required)
+        except ValidationError as e:
+            return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Save the request
         serializer = self.get_serializer(data=request.data)
@@ -901,8 +1203,25 @@ class LaminationUpdateStudentRequestView(generics.RetrieveUpdateAPIView):
                 email = user.email  # Get the user's email address
 
                 # Construct the email message
-                subject = "Your Print Request is Ready to Claim"
-                message = f"Dear {user.first_name} {user.last_name},\n\nYour lamination request is now marked as 'Ready to Claim'. You can proceed to the printing office to claim your document.\n\nThank you!"
+                subject = "Your Lamination is Ready to Claim"
+                message = f"""
+                        Dear {user.first_name} {user.last_name},
+
+                        We are pleased to inform you that your lamination request is now ready to claim. You can proceed to the printing office to collect your document.
+
+                        Here are the details of your request:
+
+                        - Customer Name: {user.first_name} {user.last_name}
+                        - Department: {user.department.department_name}
+                        - Request Type: {user.lamination_request_details.request_type.request_type_name}
+                        - Paper Size: {user.lamination_request_details.paper_type.paper_type}
+                        - Quantity: {user.lamination_request_details.quantity}
+
+                        Thank you for using our lamination service.
+
+                        Best regards,
+                        The University Printing Press System
+                        """
                 from_email = "universityprintingpresssystem@gmail.com"
 
                 # Send the email

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import io from "socket.io-client"; 
 import { useWebSocket } from "../hooks/useWebSocket";
 
+
 export const PersonnelPrintRequestForm = () => {
   
   const user = useSelector((state) => state.user.value.user);
@@ -18,7 +19,7 @@ export const PersonnelPrintRequestForm = () => {
   const [paperType, setPaperType] = useState([]);
   const [position, setPosition] = useState([]);
   const [file,setFile] = useState(null);
-
+  const [isDisabled, setIsDisabled] = useState(false);
 
 
   
@@ -53,6 +54,7 @@ export const PersonnelPrintRequestForm = () => {
     department: user.department.id,
     position: user.position.id,
     pdf: null,
+    urgent: false
   });
 
   const [printDetails, setPrintDetails] = useState({
@@ -122,6 +124,7 @@ export const PersonnelPrintRequestForm = () => {
       formData.append("user", user.id)
       formData.append("request_status", requestStatus);
       formData.append("pdf", data.pdf);
+      formData.append("urgent", data.urgent)
       formData.append("print_request_details", ids);
 
       console.log(data.pdf);
@@ -141,15 +144,16 @@ export const PersonnelPrintRequestForm = () => {
       }
 
       alert("Request submitted successfully!");
-      // navigate('/personnel/dashboard')
+      navigate('/personnel/dashboard')
       
     } catch (error) {
       console.error("Failed to submit personnel details", error);
-      alert("Failed to submit personnel details. Please try again.");
+      alert(error.response.data.error);
     }
   };
 
   const submitRequest = async (e) => {
+    setIsDisabled(true)
     e.preventDefault();
 
     const isExamination = requestType.some(
@@ -178,6 +182,10 @@ export const PersonnelPrintRequestForm = () => {
     } catch (error) {
       console.error("Failed to submit print request", error);
       alert("Failed to submit request. Please try again.");
+      setIsDisabled(false);
+    }
+    finally {
+      setIsDisabled(false); // Ensure the button is re-enabled regardless of success or failure
     }
 
     console.log(data)
@@ -284,10 +292,18 @@ export const PersonnelPrintRequestForm = () => {
               <p className="text-center">Duplex</p>
             <input type="checkbox" onChange={(e) => setPrintDetails({ ...printDetails, duplex: e.target.checked })} className="h-[1.5rem]"/>
             </div>
+            {user.role === "Chairman" ? (
+              <div className="w-full max-w-[100%rem] flex flex-col">
+                <p className="text-center">Urgent</p>
+                <input type="checkbox" onChange={(e) => setData({ ...data, urgent: e.target.checked })} className="h-[1.5rem]" checked={data.urgent}/>
+              </div>
+            ) : (
+              <></>
+            )}
             </div>
             <input type="file" onChange={(e) => setData({ ...data, pdf: e.target.files[0]})} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"></input>
             {/* <button onClick={handleUpload}>Upload</button> */}
-            <button type="submit" id="printing-submit-request">Submit Request</button>
+            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
         </div>
       </div>

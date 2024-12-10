@@ -2,7 +2,11 @@
     import { useSelector } from "react-redux";
     export const GenericTable = ({ headers, data, style, thStyle }) => {
 
-      
+      const sortedData = [...data].sort((a, b) => {
+        if (a.isUrgent && !b.isUrgent) return -1; // Move urgent requests to top
+        if (!a.isUrgent && b.isUrgent) return 1;
+        return 0; // Keep the original order for non-urgent rows
+      });
       
       return (
         <div className="generic-table flex justify-center">
@@ -24,8 +28,8 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((row, rowIndex) => (
-                      <tr key={rowIndex}>
+                    {sortedData.map((row, rowIndex) => (
+                      <tr key={rowIndex} className={`${row.isUrgent ? 'bg-red-400' : ''}`}>
                         {headers.map((header, colIndex) => (
                           <td key={colIndex} className="px-8 py-4">
                             {typeof row[header] === "string" || typeof row[header] === "number" ? (

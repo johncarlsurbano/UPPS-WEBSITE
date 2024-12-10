@@ -55,19 +55,9 @@ export const GenericDashBoard = ({
             </h1>
             <div className="flex flex-col gap-3">
               <Button
-                title={"Printing"}
+                title={"Add Request"}
                 style="text-white bg-navy rounded-[10px] w-full max-w-[15rem] py-[0.8rem] text-[clamp(1.2rem,3vw,1.2rem)]"
-                onClick={() => requestAccess('/personnel/request/print') || (!user.role ? navigate('/student/request/print') : null)}
-              />
-              <Button
-                title={"Book Binding"}
-                style="text-white bg-navy rounded-[10px] w-full max-w-[15rem] py-[0.8rem] text-[clamp(1.2rem,3vw,1.2rem)]"
-                onClick={() => requestAccess('/personnel/request/bookbind') || (!user.role ? navigate('/student/request/bookbind') : null)}
-              />
-              <Button
-                title={"Lamination"}
-                style="text-white bg-navy rounded-[10px] w-full max-w-[15rem] py-[0.8rem] text-[clamp(1.2rem,3vw,1.2rem)]"
-                onClick={() => requestAccess('/personnel/request/laminate') || (!user.role ? navigate('/student/request/laminate') : null)}
+                onClick={() => requestAccess('/personnel/form') || (!user.role ? navigate('/student/form') : null)}
               />
             </div>
           </div>
@@ -85,7 +75,7 @@ export const GenericDashBoard = ({
                 }
               />
               <DashboardCounterBox
-                title={"Total Customer"}
+                title={"Total Requests"}
                 count={totalCount}
                 countStyle={"text-[clamp(2rem,3vw,3rem)] font-bold text-yellow"}
                 textStyle={

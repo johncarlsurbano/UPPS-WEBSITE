@@ -68,7 +68,7 @@ export const PaymentSlipForm = () => {
                       {paymentSlip?.revnumber}
                     </td>
                     <td className="py-[0.2rem] border-black border-[1px] text-center ">
-                      {paymentSlip?.date}
+                      10.01.21
                     </td>
                     <td className="py-[0.2rem] border-black border-[1px] text-center">
                       {paymentSlip?.pagenumber}
@@ -122,8 +122,8 @@ export const PaymentSlipForm = () => {
         <div className="flex gap-5 justify-end mt-5">
           <p>Prepared by:</p>
           <div className="flex flex-col text-center">
-            <p>John Carl Surbano</p>
-            <p>Staff, Printing Press</p>
+            <p>Maria Carolina Domugho</p>
+            <p>Office Head, Printing Press</p>
           </div>
         </div>
       </div>

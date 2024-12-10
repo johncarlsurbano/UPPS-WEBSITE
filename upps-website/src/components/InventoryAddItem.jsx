@@ -1,17 +1,16 @@
 import Button from "./Button";
 import axios from "axios";
-import {useState} from 'react'
-
+import { useState } from 'react';
+import Swal from 'sweetalert2'
 
 export const InventoryAddItem = ({ onClose }) => {
-
   const [formData, setFormData] = useState({
-      "paper_type": {
-          "paper_type": "",
-          "price": null
-      },
-      "onHand": null
-  })
+    "paper_type": {
+      "paper_type": "",
+      "price": null
+    },
+    "onHand": null
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,20 +31,24 @@ export const InventoryAddItem = ({ onClose }) => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent default form submission behavior
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/inventory/additem/",formData)
-      const data = response.data
+      const response = await axios.post("http://127.0.0.1:8000/api/inventory/additem/", formData);
+      const data = response.data;
 
-      console.log("Added Item:" + data) 
-      alert("You have Added an Item!")
-
-    }catch (e) {
+      console.log("Added Item:", data);
+      Swal.fire({
+        title: "Added Item!",
+        text: "You have Added an Item!",
+        icon: "success"
+      });
+      onClose(); // Close the modal after adding the item
+    } catch (e) {
       console.error("Error adding item:", e);
     }
-  }
+  };
 
- 
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
@@ -59,7 +62,6 @@ export const InventoryAddItem = ({ onClose }) => {
         <h1 className="text-center text-2xl font-bold text-[#17153a]">
           ADD <span className="text-yellow-500">ITEM</span>
         </h1>
-
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-3 gap-4">
@@ -93,14 +95,14 @@ export const InventoryAddItem = ({ onClose }) => {
               />
             </div>
           </div>
-          
+
           <div className="flex flex-col gap-2">
             <label className="font-medium">Price</label>
             <input
-               type="number"
-               name="price"
-               value={formData.paper_type.price}
-               onChange={handleChange}
+              type="number"
+              name="price"
+              value={formData.paper_type.price}
+              onChange={handleChange}
               className="border border-gray-300 rounded-md p-2 focus:outline-none focus:border-blue-500"
             />
           </div>
@@ -119,7 +121,6 @@ export const InventoryAddItem = ({ onClose }) => {
           </div>
         </form>
       </div>
-      
     </div>
   );
 };

@@ -61,8 +61,11 @@ export const userSlice = createSlice({
     updateUserData: (state, action) => {
       state.value.user = { ...state.value.user, ...action.payload };
     },
+    setEmail: (state, action) => {
+      state.value.user.email = action.payload; // Save the email
+    },
   },
 });
 
-export const { post, generateRegistrationCode, login, logout, updateUserData } = userSlice.actions;
+export const { post, generateRegistrationCode, login, logout, updateUserData, setEmail } = userSlice.actions;
 export default userSlice.reducer;

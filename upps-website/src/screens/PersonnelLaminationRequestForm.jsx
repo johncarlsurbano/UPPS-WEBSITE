@@ -14,6 +14,7 @@ export const PersonnelLaminationRequestForm = () => {
 
   const user = useSelector((state) => state.user.value.user);
   const navigate = useNavigate();
+  const [isDisabled, setIsDisabled] = useState(false);
 
   
 
@@ -121,6 +122,8 @@ export const PersonnelLaminationRequestForm = () => {
       });
 
       console.log("Request added to queue successfully.");
+      alert("Request submitted successfully!");
+      navigate('/personnel/dashboard')
 
     } catch (error) {
       console.error("Failed to submit personnel details", error);
@@ -130,6 +133,7 @@ export const PersonnelLaminationRequestForm = () => {
 
   const submitRequest = async (e) => {
     e.preventDefault();
+    setIsDisabled(true)
     try {
       const laminationRequestResponse = await axios.post(
         "http://127.0.0.1:8000/api/lamination/requestdetails",
@@ -141,14 +145,15 @@ export const PersonnelLaminationRequestForm = () => {
       );
 
       await personnelDetails(laminationRequestResponse.data.id);
-      alert("Request submitted successfully!");
-      navigate('/personnel/dashboard')
-
+     
     } catch (error) {
       console.error("Failed to submit print request", error);
       alert("Failed to submit request. Please try again.");
+      setIsDisabled(false);
     }
-    console.log(data);
+    finally {
+      setIsDisabled(false); // Ensure the button is re-enabled regardless of success or failure
+    }
 
     console.log(laminationDetails.request_type)
 
@@ -344,9 +349,7 @@ export const PersonnelLaminationRequestForm = () => {
               className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"
             ></input>
             {/* <button onClick={handleUpload}>Upload</button> */}
-            <button type="submit" id="printing-submit-request">
-              Submit Request
-            </button>
+            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
         </div>
       </div>

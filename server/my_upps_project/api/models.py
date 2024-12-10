@@ -1,7 +1,7 @@
 from django.db import models
 from django import forms
 from PyPDF2 import PdfReader
-
+from decimal import Decimal
 
 
 # Create your models here.
@@ -15,7 +15,13 @@ class ServiceType(models.Model):
 
 class PaperType(models.Model):
     paper_type = models.CharField(max_length=100)
-    price = models.IntegerField(null=True, blank=True)
+    price = models.DecimalField(
+        max_digits=10,  # Total number of digits allowed (including decimal places)
+        decimal_places=2,  # Number of decimal places
+        null=True,
+        blank=True
+    )
+
 
     def __str__(self):
         return self.paper_type
@@ -43,7 +49,6 @@ class RequestType(models.Model):
 
     def __str__(self):
         return self.request_type_name
-
 
 
 class User(models.Model):
@@ -91,16 +96,9 @@ class PersonnelPrintRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True) 
     page_count = models.IntegerField(null=True, blank=True)
+    urgent = models.BooleanField(default=False, blank=True)
 
-    def save(self, *args, **kwargs):
-        # Validate stock availability
-        inventory_item = PrintingInventory.objects.filter(paper_type=self.print_request_details.paper_type).first()
-        if not inventory_item:
-            raise ValueError(f"No inventory available for the selected paper type: {self.print_request_details.paper_type}")
-        if inventory_item.onHand < 1:
-            raise ValueError(f"Insufficient stock for paper type: {self.print_request_details.paper_type}.")
-        # Proceed with saving if validation passes
-        super().save(*args, **kwargs)
+
 
     # def get_pdf_page_count(self):
     #     if not self.pdf:
@@ -180,6 +178,7 @@ class BookBindingPersonnelRequest(models.Model):
     pdf = models.FileField(upload_to="uploads/", null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     page_count = models.IntegerField(null=True, blank=True)
+    remarks = models.CharField(max_length=255, blank=True)
 
 
 
@@ -200,6 +199,7 @@ class BookBindingStudentRequest(models.Model):
     pdf = models.FileField(upload_to="uploads/", null=True)
     book_binding_request_details = models.ForeignKey(BookBindingRequestDetails, on_delete=models.CASCADE)
     page_count = models.IntegerField(null=True, blank=True)
+    remarks = models.CharField(max_length=255, blank=True)
 
 
 
@@ -229,6 +229,7 @@ class LaminationPersonnelRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
     page_count = models.IntegerField(null=True, blank=True)
+    remarks = models.CharField(max_length=255, blank=True)
 
 class LaminationPersonnelQueue(models.Model):
     lamination_personnel_request = models.ForeignKey(LaminationPersonnelRequest, on_delete=models.CASCADE)
@@ -247,6 +248,7 @@ class LaminationStudentRequest(models.Model):
     pdf = models.FileField(upload_to="uploads/", null=True)
     lamination_request_details = models.ForeignKey(LaminationRequestDetails, on_delete=models.CASCADE)
     page_count = models.IntegerField(null=True, blank=True)
+    remarks = models.CharField(max_length=255, blank=True)
 
 
 

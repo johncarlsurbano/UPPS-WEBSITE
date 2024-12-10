@@ -1,5 +1,5 @@
 import uppsLogo from "../assets/upps-logo.png";
-import userProfileImage from "../assets/tutin.jpg";
+import userProfileImage from "../assets/tutin.png"
 import ProfileDropDown from "./ProfileDropDown.jsx"
 import { PiWechatLogoFill } from "react-icons/pi";
 import { IoNotificationsSharp } from "react-icons/io5";
@@ -11,6 +11,8 @@ import { useSelector } from "react-redux";
 export const HeaderLoggedIn = ({href}) => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.value.user);
+
+  
 
   const homeNavigation = (role) => {
     switch (role) {
@@ -62,8 +64,8 @@ export const HeaderLoggedIn = ({href}) => {
 
 
             {/* <IoChatbubbleEllipsesOutline style={{fontSize: '25px'}} /> */}
-
-            <a href=""><IoNotificationsSharp style={{fontSize: '25px', color: "#17163A"}} /></a>
+{/* 
+            <a href=""><IoNotificationsSharp style={{fontSize: '25px', color: "#17163A"}} /></a> */}
             <div className="h-[3rem] w-full max-w-[3rem] rounded-full">
               {/* <img
                 src={userProfileImage}

@@ -12,6 +12,7 @@ export const PersonnelBookBindingRequestForm = () => {
   const [paperType, setPaperType] = useState([]);
   const [position, setPosition] = useState([]);
   const [file, setFile] = useState(null);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   
   const user = useSelector((state) => state.user.value.user);
@@ -121,11 +122,13 @@ export const PersonnelBookBindingRequestForm = () => {
         queue_status: "Pending",
       });
       console.log("Request added to queue successfully.");
+      alert("Request submitted successfully!");
+      navigate('/personnel/dashboard')
 
     
     } catch (error) {
       console.error("Failed to submit personnel details", error);
-      alert("Failed to submit personnel details. Please try again.");
+      alert(error.request.response);
     }
   };
 
@@ -134,6 +137,7 @@ export const PersonnelBookBindingRequestForm = () => {
 
   const submitRequest = async (e) => {
     e.preventDefault();
+    setIsDisabled(true)
     try {
       const bookBindRequestResponse = await axios.post(
         "http://127.0.0.1:8000/api/bookbind/requestdetails",
@@ -145,13 +149,14 @@ export const PersonnelBookBindingRequestForm = () => {
       );
 
       await personnelDetails(bookBindRequestResponse.data.id);
-      alert("Request submitted successfully!");
-      navigate('/personnel/dashboard')
       
     } catch (error) {
       alert("Failed to submit request. Please try again.");
+      setIsDisabled(false);
     }
-
+    finally {
+      setIsDisabled(false); // Ensure the button is re-enabled regardless of success or failure
+    }
 
   };
 
@@ -319,9 +324,7 @@ export const PersonnelBookBindingRequestForm = () => {
               ></input>
             </div>
             {/* <button onClick={handleUpload}>Upload</button> */}
-            <button type="submit" id="printing-submit-request">
-              Submit Request
-            </button>
+            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
         </div>
       </div>

@@ -19,11 +19,15 @@ export const QueueRequest = ({
     removeQueue
 
 }) => {
-
+    
     const personnelRequest = queueDetail.personnel_print_request.user;
     const printRequestDetails = queueDetail ? queueDetail.personnel_print_request.print_request_details : null;
 
+    const isUrgent = queueDetail? queueDetail.personnel_print_request.urgent === true : null;
 
+    console.log(isUrgent)
+
+    console.log(queueDetail)
     const handleRemoveClick = (id) => {
         handleShowModal(id);  // Trigger the modal with the request id
     };
@@ -31,7 +35,7 @@ export const QueueRequest = ({
   
 
     return {
-        
+        isUrgent,
         Name: personnelRequest ? `${personnelRequest.first_name} ${personnelRequest.last_name}` : 'N/A',
         "Time-In": queueDetail.request_date || 'N/A',
         "Type": printRequestDetails ? printRequestDetails.printing_type.printing_type_name : 'N/A',

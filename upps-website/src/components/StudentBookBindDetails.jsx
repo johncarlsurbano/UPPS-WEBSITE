@@ -47,15 +47,15 @@ export const StudentBookBindDetails = ({ requestData, onClose, onClick}) => {
             <p className='text-base'>{personnelRequest? personnelRequest.service_type.service_type_name : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Requst-Type</h1>
-            <p className='text-base'>{printRequestDetails ? printRequestDetails.request_type.request_type_name : 'N/A'}</p>
+          <h1 className='text-xl'>Contact Number</h1>
+            <p className='text-base'>{personnelRequest? personnelRequest.contact_number : 'N/A'}</p>
           </div>
           <div>
           <h1 className='text-xl'>Paper Size</h1>
             <p className='text-base'>{printRequestDetails ? printRequestDetails.paper_type.paper_type : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Quantity</h1>
+          <h1 className='text-xl'>Number of Copies</h1>
             <p className='text-base'>{printRequestDetails ? printRequestDetails.quantity : 'N/A'}</p>
           </div>
           <div>
@@ -90,8 +90,12 @@ export const StudentBookBindDetails = ({ requestData, onClose, onClick}) => {
           <p className="text-base">N/A</p>
         )}
           </div>
-        </div>
 
+          <div>
+          <h1 className='text-xl'>Remarks</h1>
+          <p>{personnelRequest.remarks}</p>
+        </div>
+        </div>
         <button
           className="w-full mt-6 py-3 text-[#ffffff] bg-[#17153a] font-bold rounded-lg hover:bg-[#dca10f] transition-all duration-200 transform hover:scale-[1.05]"
           onClick={onClose}

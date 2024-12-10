@@ -16,7 +16,7 @@ export const ExaminationPendingRequest = ({
 
     
 
-
+    console.log(requestDetail)
     return {
         Name: requestDetail ? `${requestDetail.user.first_name} ${requestDetail.user.last_name}` : 'N/A',
         "Request-Date": date,
@@ -32,6 +32,9 @@ export const ExaminationPendingRequest = ({
             >
             </Button>
         ),
+        Status: (
+            <span style={ {color: (requestDetail.request_status) === "accepted"? "green" : "red" }}>{requestDetail? requestDetail.request_status: "N/A"}</span>
+        )
        
     };
 };

@@ -86,7 +86,7 @@ export const JobOrderForm = ({requestData,route}) => {
                         {request?.revnumber}
                       </td>
                       <td className="py-[0.2rem] border-black border-[1px] text-center ">
-                        {request?.effective_date}
+                        10.01.21
                       </td>
                       <td className="py-[0.2rem] border-black border-[1px] text-center">
                         {request?.pagenumber}

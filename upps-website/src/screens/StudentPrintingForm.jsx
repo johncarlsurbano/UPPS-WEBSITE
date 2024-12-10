@@ -3,13 +3,18 @@ import React from "react";
 import axios from "axios";
 import "../styles/PersonnelPrintRequestForm.css";
 import {useNavigate} from "react-router-dom"
+import {useSelector} from "react-redux"
+
 
 export const StudentPrintingForm = () => {
-  const [department, setDepartment] = useState([]);
+  const [department, setDepartment] = useState([]); 
   const [printingType, setPrintingType] = useState([]);
   const [paperType, setPaperType] = useState([]);
   const [requestType, setRequestType] = useState([]);
   const [file,setFile] = useState(null);
+  const [isDisabled, setIsDisabled] = useState(false);
+
+  const user = useSelector((state) => state.user.value.user);
 
   const navigate = useNavigate()
   // Function to fetch data for dropdowns
@@ -77,7 +82,6 @@ export const StudentPrintingForm = () => {
 
   }, [printingType, paperType, department, requestType]);
 
-  console.log(data);
   
   const personnelDetails = async (ids) => {
     try {
@@ -109,14 +113,16 @@ export const StudentPrintingForm = () => {
 
       console.log("You're Request Has Been Sent! Proceeding to Dashboard ..... ")
       navigate('/')
+      alert("Request submitted successfully!");
       
     } catch (error) {
       console.error("Failed to submit personnel details", error);
       alert("Failed to submit personnel details. Please try again.");
     }
-  };
+  };  
 
   const submitRequest = async (e) => {
+    setIsDisabled(true)
     e.preventDefault();
     try {
       const formData = {
@@ -129,11 +135,16 @@ export const StudentPrintingForm = () => {
       const printRequestResponse = await axios.post("http://127.0.0.1:8000/api/printrequestdetails/", formData)
       
       await personnelDetails(printRequestResponse.data.id);
+      console.log(formData)
 
-      alert("Request submitted successfully!");
+ 
     } catch (error) {
       console.error("Failed to submit print request", error);
       alert("Failed to submit request. Please try again.");
+      setIsDisabled(false);
+    }
+    finally {
+      setIsDisabled(false); // Ensure the button is re-enabled regardless of success or failure
     }
 
   
@@ -171,7 +182,7 @@ export const StudentPrintingForm = () => {
             </div>
             <div className="flex flex-col">
             <p>Email</p>
-            <input type="text" placeholder="Email" onChange={(e) => setData({ ...data, email: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+            <input type="email" placeholder="Email" onChange={(e) => setData({ ...data, email: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
             </div>
             <div className="flex w-full max-w-[100%] gap-[1rem]">
               <div className="flex flex-col">
@@ -182,7 +193,7 @@ export const StudentPrintingForm = () => {
               <p>Contact Number</p>
               <input type="number" placeholder="Contact Number" value={data.contact_number || ''} onChange={(e) =>{
                 let value = e.target.value;
-                if(value.length <= 10){
+                if(value.length <= 11){
                   setData({ ...data, contact_number: e.target.value })
                 } 
                 else{
@@ -219,11 +230,13 @@ export const StudentPrintingForm = () => {
 
             <div className="w-full max-w-[100%]">
               <p>Request Type</p>
-            <select onChange={(e) => setPrintDetails({ ...printDetails, request_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
-              {requestType.map((type, index) => (
-                <option key={index} value={type.id}>{type.request_type_name}</option>
-              ))}
-            </select>
+              <select onChange={(e) => setPrintDetails({ ...printDetails, request_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+                {requestType.map((type, index) => (
+                  type.request_type_name !== "Examination" && (
+                    <option key={index} value={type.id}>{type.request_type_name}</option>
+                  )
+                ))}
+              </select>
             </div>
 
             <div className="w-full max-w-[100%]">
@@ -238,8 +251,8 @@ export const StudentPrintingForm = () => {
 
             <div className="flex h-[fit-content] w-full max-w-[full] items-center gap-[1rem]">
             <div className="w-full max-w-[100%]">
-              <p>Quantity</p>
-            <input type="number" placeholder="Quantity" onChange={(e) => setPrintDetails({ ...printDetails, quantity: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+              <p>Number of Copies</p>
+            <input type="number" placeholder="Number of Copies" onChange={(e) => setPrintDetails({ ...printDetails, quantity: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
             </div>
             <div className="w-full max-w-[100%rem] flex flex-col">
               <p className="text-center">Duplex</p>
@@ -248,7 +261,7 @@ export const StudentPrintingForm = () => {
             </div>
             <input type="file" onChange={(e) => setData({ ...data, pdf: e.target.files[0]})} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"></input>
             {/* <button onClick={handleUpload}>Upload</button> */}
-            <button type="submit" id="printing-submit-request">Submit Request</button>
+            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
         </div>
       </div>

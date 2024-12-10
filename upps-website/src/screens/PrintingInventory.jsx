@@ -38,7 +38,6 @@ export const PrintingInventory = () => {
           handleSave,
           handleOnHandChange,
           cancelEdit ,
-          handleDelete,
           priceValue,
           handlePriceChange
         })
@@ -120,18 +119,6 @@ export const PrintingInventory = () => {
   },[selectedStatus,filteredItem, inventory])
 
   
-  const handleDelete = async  (id) => {
-    try {
-      const response = await axios.delete(`http://127.0.0.1:8000/api/deleteinventory/${id}/`)
-      const data = response.data
-      console.log("Deleted data: " + data)
-      await fetchInventory();
-
-    } catch (e) {
-      console.error(e);
-    }
-    
-  }
 
   const printingInventoryHeader = [
     "Item Name",

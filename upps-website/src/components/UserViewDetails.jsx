@@ -10,7 +10,7 @@ export const UserViewDetails = ({ request, onClose, handleAcceptUser, handleDeni
   }
 
   return (
-    <div className=" flex flex-col fixed inset-0 bg-black bg-opacity-50 justify-center items-center z-50">
+    <div className=" flex flex-col fixed inset-0 bg-black bg-opacity-50 justify-center items-center z-40">
       <div
         className="personel-view-details-main flex flex-col bg-[#ffff] mx-auto w-full max-w-[500px] h-[400px]"
         style={{ boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.25)" }}

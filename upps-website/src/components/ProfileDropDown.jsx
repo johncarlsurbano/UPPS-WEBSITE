@@ -7,7 +7,7 @@ import Popper from '@mui/material/Popper';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
 import Stack from '@mui/material/Stack';
-import userProfileImage from "../assets/tutin.jpg";
+import userProfileImage from "../assets/tutin.png";
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/user";

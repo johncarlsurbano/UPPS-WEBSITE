@@ -10,6 +10,7 @@ export const StudentBookBindForm = () => {
   const [paperType, setPaperType] = useState([]);
   const [requestType, setRequestType] = useState([]);
   const [file,setFile] = useState(null);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   const navigate = useNavigate()
   // Function to fetch data for dropdowns
@@ -41,9 +42,8 @@ export const StudentBookBindForm = () => {
   });
 
   const [bookBindDetails, setBookBindDetails] = useState({
-    duplex: false,
     quantity: "",
-    printing_type: null,
+    request_type: null,
     paper_type: null,
   });
 
@@ -103,6 +103,7 @@ export const StudentBookBindForm = () => {
       })
 
       console.log("You're Request Has Been Sent! Proceeding to Dashboard ..... ")
+      alert("Request submitted successfully!");
       navigate('/')
       
     } catch (error) {
@@ -113,6 +114,7 @@ export const StudentBookBindForm = () => {
 
   const submitRequest = async (e) => {
     e.preventDefault();
+    setIsDisabled(true);
     try {
       const formData = {
         quantity: bookBindDetails.quantity,
@@ -123,10 +125,14 @@ export const StudentBookBindForm = () => {
       
       await personnelDetails(bookBindRequestResponse.data.id);
 
-      alert("Request submitted successfully!");
+      
     } catch (error) {
       console.error("Failed to submit print request", error);
       alert("Failed to submit request. Please try again.");
+      setIsDisabled(false);
+    }
+    finally {
+      setIsDisabled(false); // Ensure the button is re-enabled regardless of success or failure
     }
     console.log(data)
     
@@ -163,7 +169,7 @@ export const StudentBookBindForm = () => {
             </div>
             <div className="flex flex-col">
             <p>Email</p>
-            <input type="text" placeholder="Email" onChange={(e) => setData({ ...data, email: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+            <input type="email" placeholder="Email" onChange={(e) => setData({ ...data, email: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
             </div>
             <div className="flex w-full max-w-[100%] gap-[1rem]">
               <div className="flex flex-col">
@@ -174,7 +180,7 @@ export const StudentBookBindForm = () => {
               <p>Contact Number</p>
               <input type="number" placeholder="Contact Number" value={data.contact_number || ''} onChange={(e) =>{
                 let value = e.target.value;
-                if(value.length <= 10){
+                if(value.length <= 11){
                   setData({ ...data, contact_number: e.target.value })
                 } 
                 else{
@@ -228,7 +234,7 @@ export const StudentBookBindForm = () => {
             </div>
             <input type="file" onChange={(e) => setData({ ...data, pdf: e.target.files[0]})} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"></input>
             {/* <button onClick={handleUpload}>Upload</button> */}
-            <button type="submit" id="printing-submit-request">Submit Request</button>
+            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ export const StudentLamination = () => {
   const [paperType, setPaperType] = useState([]);
   const [requestType, setRequestType] = useState([]);
   const [file,setFile] = useState(null);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   const navigate = useNavigate()
   // Function to fetch data for dropdowns
@@ -34,15 +35,13 @@ export const StudentLamination = () => {
     email: "",
     request_status: "pending",
     department: null,
-    student_id: null,
     contact_number: null,
     pdf: null,
   });
 
   const [laminationDetails, setLaminationDetails] = useState({
-    duplex: false,
     quantity: "",
-    printing_type: null,
+    request_type: null,
     paper_type: null,
   });
 
@@ -102,6 +101,7 @@ export const StudentLamination = () => {
       })
 
       console.log("You're Request Has Been Sent! Proceeding to Dashboard ..... ")
+      alert("Request submitted successfully!");
       navigate('/')
       
     } catch (error) {
@@ -112,6 +112,7 @@ export const StudentLamination = () => {
 
   const submitRequest = async (e) => {
     e.preventDefault();
+    setIsDisabled(true);
     try {
       const formData = {
         quantity: laminationDetails.quantity,
@@ -122,10 +123,14 @@ export const StudentLamination = () => {
       
       await personnelDetails(laminationRequestResponse.data.id);
 
-      alert("Request submitted successfully!");
+      
     } catch (error) {
       console.error("Failed to submit print request", error);
       alert("Failed to submit request. Please try again.");
+      setIsDisabled(false);
+    }
+    finally {
+      setIsDisabled(false); // Ensure the button is re-enabled regardless of success or failure
     }
     console.log(data)
     
@@ -173,7 +178,7 @@ export const StudentLamination = () => {
               <p>Contact Number</p>
               <input type="number" placeholder="Contact Number" value={data.contact_number || ''} onChange={(e) =>{
                 let value = e.target.value;
-                if(value.length <= 10){
+                if(value.length <= 11){
                   setData({ ...data, contact_number: e.target.value })
                 } 
                 else{
@@ -227,7 +232,7 @@ export const StudentLamination = () => {
             </div>
             <input type="file" onChange={(e) => setData({ ...data, pdf: e.target.files[0]})} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"></input>
             {/* <button onClick={handleUpload}>Upload</button> */}
-            <button type="submit" id="printing-submit-request">Submit Request</button>
+            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
         </div>
       </div>

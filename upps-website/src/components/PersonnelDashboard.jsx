@@ -20,6 +20,7 @@ export const PersonnelDashboard = ({userRole}) => {
   const [queue, setQueue] = useState([])
   const [showModal, setShowModal] = useState(null)
   const [selectedQueueRequest, setSelectedQueueRequest] = useState(null)
+  const [loading, setLoading] = useState(false);
 
   // BOOKBINDING HOOKS
   const [bookBindRequest, setBookBindRequest] = useState([])
@@ -38,6 +39,12 @@ export const PersonnelDashboard = ({userRole}) => {
   const user = useSelector((state) => state.user.value.user);
   const navigate = useNavigate()
   
+
+  const LoadingSpinner = () => (
+    <div className="flex justify-center items-center">
+      <div className="w-16 h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+    </div>
+  );
   
 
   const selectInitialColor = (status) => {
@@ -76,6 +83,7 @@ export const PersonnelDashboard = ({userRole}) => {
   };
 
   const handleQueueStatus = async (id, newStatus) => {
+    setLoading(true)
     try {
       const response = await axios.patch(`http://127.0.0.1:8000/api/updatequeue/${id}/`, {
         queue_status: newStatus,
@@ -93,6 +101,9 @@ export const PersonnelDashboard = ({userRole}) => {
 
     } catch (err) {
       console.error("Error updating queue status:", err);
+    }
+    finally {
+      setLoading(false);  // Reset loading to false when the request is finished
     }
   };
 
@@ -132,8 +143,6 @@ export const PersonnelDashboard = ({userRole}) => {
     } catch(e){
       console.error("Error proceeding bill:", e);
     }
-    console.log(queueRequest)
-    console.log(printtype)
 
 
   }
@@ -173,6 +182,7 @@ export const PersonnelDashboard = ({userRole}) => {
 
 
   const fetchQueueRequests = async () => {
+    setLoading(true);
     try {
       const response = await axios.get("http://127.0.0.1:8000/api/displaypersonnelqueue/print/")
       const data = response.data
@@ -213,6 +223,9 @@ export const PersonnelDashboard = ({userRole}) => {
 
     }catch (e) {
       console.error("Error fetching queue requests:", e);
+    }
+    finally {
+      setLoading(false);  // Reset loading to false when the request is finished
     }
   }
   
@@ -447,33 +460,34 @@ export const PersonnelDashboard = ({userRole}) => {
   const bookBindingDashboard = () => {
     return (
 
-      <GenericDashBoard
-        dashboardHeader={[
-          "Name",
-          "Time-In",
-          "Type",
-          "Request-Type",
-          "Status",
-          "Details",
-        ]}
-        dashboardData={bookBindRequest}
-        readyToClaimHeader={[
-          "Name",
-          "Time-In",
-          "Type",
-          "Request-Type",
-          "Status",
-          "Details",
-          ...(user.role === "Office Head" ? ["Action"] : [])
-        ]}
-        readyToClaimData={readyToClaimBBRequest}
-        dashboardTitle="Personnel Book Binding Dashboard"
-        readyToClaimTitle="Ready To Claim Personnel Book Binding Request"
-        pendingCount={bookBindRequest.filter((request) => request.Status.props.children !== "Ready to Claim").length || queueRequest.filter((request) => request.Status.props.value !== "Ready to Claim").length}
-        totalCount={bookBindRequest.length}
-        readyCount={bookBindRequest.filter((request) => request.Status.props.children === "Ready to Claim").length || queueReadytoClaimRequest.filter((request) => request.Status.props.value === "Ready to Claim").length}
-      />
-    );
+        <GenericDashBoard
+          dashboardHeader={[
+            "Name",
+            "Time-In",
+            "Type",
+            "Request-Type",
+            "Status",
+            "Details",
+          ]}
+          dashboardData={bookBindRequest}
+          readyToClaimHeader={[
+            "Name",
+            "Time-In",
+            "Type",
+            "Request-Type",
+            "Status",
+            "Details",
+            ...(user.role === "Office Head" ? ["Action"] : [])
+          ]}
+          readyToClaimData={readyToClaimBBRequest}
+          dashboardTitle="Personnel Book Binding Dashboard"
+          readyToClaimTitle="Ready To Claim Personnel Book Binding Request"
+          pendingCount={bookBindRequest.filter((request) => request.Status.props.children !== "Ready to Claim").length || queueRequest.filter((request) => request.Status.props.value !== "Ready to Claim").length}
+          totalCount={bookBindRequest.length}
+          readyCount={bookBindRequest.filter((request) => request.Status.props.children === "Ready to Claim").length || queueReadytoClaimRequest.filter((request) => request.Status.props.value === "Ready to Claim").length}
+        />
+        )
+        
   };
 
   const laminationDashboard = () => {

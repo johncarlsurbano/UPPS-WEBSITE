@@ -43,11 +43,11 @@ export const StudentPrintDetails = ({ requestData, onClose, onClick}) => {
             <p className='text-base'>{personnelRequest ? personnelRequest.student_id: 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Type</h1>
-            <p className='text-base'>{printRequestDetails? printRequestDetails.printing_type.printing_type_name : 'N/A'}</p>
+          <h1 className='text-xl'>Contact Number</h1>
+            <p className='text-base'>{personnelRequest? personnelRequest.contact_number : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Requst-Type</h1>
+          <h1 className='text-xl'>Request-Type</h1>
             <p className='text-base'>{printRequestDetails ? printRequestDetails.request_type.request_type_name : 'N/A'}</p>
           </div>
           <div>
@@ -55,7 +55,7 @@ export const StudentPrintDetails = ({ requestData, onClose, onClick}) => {
             <p className='text-base'>{printRequestDetails ? printRequestDetails.paper_type.paper_type : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Quantity</h1>
+          <h1 className='text-xl'>Number of Copies</h1>
             <p className='text-base'>{printRequestDetails ? printRequestDetails.quantity : 'N/A'}</p>
           </div>
           <div>

@@ -1,4 +1,4 @@
-import personnelProfile from "../assets/tutin.jpg";
+import personnelProfile from "../assets/tutin.png";
 export const RequestDetails = () => {
   return (
     <div className="personel-view-details flex flex-col ">

@@ -9,6 +9,7 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name="login"),
     path('validateemail/', EmailView.as_view(), name="validateemail"),
     path('generatecode/', SendRegistrationCodeView.as_view(), name="generatecode"),
+    path('resetpassword/', ResetPasswordView.as_view(), name="resetpassword"),
     path('getuser/', GetUserView.as_view(), name="getuser"),
     path('updateuser/status/<int:pk>', UpdateUserStatusView.as_view(), name="updateuser"),
     path('updateuser/<int:pk>/', UpdateUserView.as_view(), name="updateuser"),

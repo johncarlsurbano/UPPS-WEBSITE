@@ -11,6 +11,8 @@ import { useSelector } from "react-redux";
 import { UserViewDetails} from "../components/UserViewDetails"
 import { Footer } from "../components/Footer.jsx"
 import Button from "../components/Button"
+import { Spinner } from "../components/Spinner"
+import Swal from 'sweetalert2'
 export const ChairmanDashboard = () => {
 
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -24,6 +26,7 @@ export const ChairmanDashboard = () => {
 
   const [historyUser, setHistoryUser] = useState([])
   const [historyRequest, setHistoryRequest] = useState([])
+  const [loading, setLoading] = useState(false)
 
   const handleUserDetailsClick = (queueDetail) => {
     setSelectedUser(queueDetail);
@@ -92,8 +95,8 @@ export const ChairmanDashboard = () => {
     try {
       const response = await axios.get("http://127.0.0.1:8000/api/displaypersonnelrequest");
       const data = response.data
+      
 
-      console.log(data)
 
      
       const filteredExamination = data.filter((request) =>  request.user.department.department_name === account.department.department_name && request.print_request_details.request_type.request_type_name === "Examination" && request.request_status === 'pending')
@@ -123,6 +126,7 @@ export const ChairmanDashboard = () => {
     }
   };
   const handleAccept = async (id, e) => {
+    setLoading(true)
     try {
       const response = await axios.patch(`http://127.0.0.1:8000/api/updaterequest/${id}/`, {
         request_status: "accepted",
@@ -131,7 +135,11 @@ export const ChairmanDashboard = () => {
 
       const updatedRequest = response.data;
 
-      alert('Request Accepted!')
+      Swal.fire({
+        title: "Accepted!",
+        text: "You have accepted the request",
+        icon: "success"
+      });
 
 
       await axios.post('http://127.0.0.1:8000/api/queue/', {personnel_print_request: updatedRequest.id, queue_status: "Pending" })
@@ -141,18 +149,24 @@ export const ChairmanDashboard = () => {
         prevPendingRequests.filter(request => request.id !== id)
       );
 
+      setShowModal(false)
+
       
       await fetchPendingRequests();
-      setShowModal(false)
-    } catch (error) {
       
+    } catch (error) {
       console.error(error);
     }
+      finally {
+      setLoading(false); // Stop loading
+    }
+    
   }
 
   
 
   const handleReject = async (id) => {
+    setLoading(true)
     try {
       const response = await axios.patch(`http://127.0.0.1:8000/api/updaterequest/${id}/`, {
         request_status: "declined",
@@ -160,7 +174,13 @@ export const ChairmanDashboard = () => {
 
       const updatedData = response.data;
 
-      alert("Request has been rejected")
+      Swal.fire({
+        title: "Rejected",
+        text: "You have rejected the request",
+        icon: "success"
+      });
+
+      setShowModal(false)
       
       setPendingRequests(prevPendingRequests =>
         prevPendingRequests.filter(request => request.id!== id)
@@ -169,15 +189,23 @@ export const ChairmanDashboard = () => {
     }catch (e) {
       console.error(e);
     }
+    finally {
+      setLoading(false); // Stop loading
+    }
   } 
 
   const handleAcceptUser = async (id) => {
+    setLoading(true)
     try {
       const response = await axios.patch(`http://127.0.0.1:8000/api/updateuser/status/${id}`, {
          account_status: "Active"
       })
     
-      alert('User has been set to active')
+      Swal.fire({
+        title: "Active",
+        text: "You have set the User to Active",
+        icon: "success"
+      });
 
       setUserDetailsModal(false)
       setSelectedUser(null)
@@ -185,21 +213,33 @@ export const ChairmanDashboard = () => {
     } catch (e) {
       console.error(e);
     }
+    finally {
+      setLoading(false); // Stop loading
+    }
   }
 
   const handleDeniedUser = async (id) => {
+    setLoading(true)
     try {
       const response = await axios.patch(`http://127.0.0.1:8000/api/updateuser/status/${id}`, {
          account_status: "Denied"
       })
-    
-      alert('User has been denied')
+
+      Swal.fire({
+        title: "Denied",
+        text: "You have set the User to Denied",
+        icon: "success"
+      });
+
 
       setUserDetailsModal(false)
       setSelectedUser(null)
 
     } catch (e) {
       console.error(e);
+    }
+    finally {
+      setLoading(false); // Stop loading
     }
   }
   
@@ -257,6 +297,7 @@ export const ChairmanDashboard = () => {
     "Position",
     "Department",
     "Details",
+    "Status"
   ];
 
   const personnelExaminationRequestHistoryData = [
@@ -301,6 +342,11 @@ export const ChairmanDashboard = () => {
   
   return (
     <>
+    {loading && (
+    <div className="fixed inset-0 bg-[#808080] bg-opacity-50 z-50 flex items-center justify-center">
+      <Spinner />
+    </div>
+  )}
     <HeaderLoggedIn />
       <div className="chairman-dashboard flex flex-col ">
         <div className="chairman-dashboard-content flex flex-col  mx-auto">

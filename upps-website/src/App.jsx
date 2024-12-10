@@ -47,6 +47,8 @@ import { StudentBookBindForm } from './screens/StudentBookBindForm.jsx'
 import { StudentLamination } from './screens/StudentLamination.jsx'
 import { TransactionPage } from './screens/TransactionPage.jsx'
 import { OfficeHeadProfilePage } from './screens/OfficeHeadProfilePage.jsx'
+import { StudentForm  } from './screens/StudentForm.jsx'
+import { PersonnelForm } from './screens/PersonnelForm.jsx'
  
 
  function App() {
@@ -56,11 +58,7 @@ import { OfficeHeadProfilePage } from './screens/OfficeHeadProfilePage.jsx'
     <>
       <BrowserRouter>
         <Routes>
-          {/* 
-          <Route path="/forgotpassword" element={<ForgotPassword />} />
-          <Route path="/changepasswordcode" element={<ChangePasswordCode />} />
-          <Route path="/donechangepassword" element={<DoneChangePassword />} />
-          <Route path="/newpassword" element={<NewPassword />} /> */}
+
 
           <Route path="/" element={<Navigate to={"/landingpage"} replace/>} />
           
@@ -69,10 +67,16 @@ import { OfficeHeadProfilePage } from './screens/OfficeHeadProfilePage.jsx'
           <Route path="/doneregister" element={<DoneRegister />}></Route>
           <Route path='/login' element={<Login />}></Route>
           <Route path="/landingpage" element={<LandingPage />} />
+          <Route path="/forgotpassword" element={<ForgotPassword />} />
+          <Route path="/changepasswordcode" element={<ChangePasswordCode />} />
+          <Route path="/donechangepassword" element={<DoneChangePassword />} />
+          <Route path="/newpassword" element={<NewPassword />} /> 
 
           <Route path="/student/request/print" element={<StudentPrintingForm/>} />
           <Route path="/student/request/bookbind" element={<StudentBookBindForm />} />
           <Route path="/student/request/laminate" element={<StudentLamination />} />
+          <Route path="/student/form/" element={<StudentForm />} />
+          
 
           {/* <Route path="/student-request-form" element={<StudentRequestForm/>} /> */}
           <Route path="/student/paymentslip" element={<PaymentSlipForm />} />
@@ -93,6 +97,7 @@ import { OfficeHeadProfilePage } from './screens/OfficeHeadProfilePage.jsx'
             <Route path="profile" element={<PersonnelProfilePage />} />
             <Route path="request/bookbind" element={<PersonnelBookBindingRequestForm/>}/>
             <Route path="request/laminate" element={<PersonnelLaminationRequestForm/>}/>
+            <Route path="form" element={<PersonnelForm />} />
           </Route>
 
           
@@ -117,13 +122,14 @@ import { OfficeHeadProfilePage } from './screens/OfficeHeadProfilePage.jsx'
               {/* <Route path="inventory" element={<PrintingInventory />} /> */}
               <Route path='transactionbill' element={<TransactionPage />} />
               <Route path="profilepage" element={<OfficeHeadProfilePage/>} />
+              <Route path="inventory" element={<InventoryPage/>} />
               
           </Route>
               <Route path="/officehead/billingform" element={<BillingForm/>} />
               <Route path="/officehead/joborderform" element={<JobOrderForm/>} />
               <Route path="/officehead/joborderbookbindform" element={<JobOrderBookBind/>} />
               <Route path="/officehead/joborderlaminationform" element={<JobOrderLamination/>} />
-              <Route path="/officehead/inventory" element={<InventoryPage/>} />
+              
               
               
 

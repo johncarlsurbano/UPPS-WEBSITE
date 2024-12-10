@@ -1,4 +1,4 @@
-import personnelProfile from "../assets/tutin.jpg";
+import personnelProfile from "../assets/tutin.png";
 
 export const ChairmanPersonnelDetailsProfile = ({personnelName, personnelEmail, departmentName, style})=>{
     return(

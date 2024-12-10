@@ -77,6 +77,10 @@ export const PersonnelBookBindDetails = ({ requestData, onClose }) => {
             </div>
                )
           }
+          <div>
+            <h1 className='text-xl'>Remarks</h1>
+            <p className='text-base'>{bookbindRequest.remarks}</p>
+          </div>
         </div>
 
         <button

@@ -32,6 +32,9 @@
     const [filteredBookBindRequest, setFilteredBookBindRequest] = useState([])
     const [filteredLaminationRequest, setFilteredLaminationRequest] = useState([])
 
+    const [loading, setLoading] = useState(false);
+
+
     // BOOKBINDING HOOKS
     const [bookBindRequest, setBookBindRequest] = useState([])
     const [readyToClaimBBRequest, setReadyToClaimBBRequest] = useState([])
@@ -242,6 +245,7 @@
   
 
     const fetchStudentRequest = async () => {
+      setLoading(true);
       try { 
         const response = await axios.get('http://127.0.0.1:8000/api/getstudent/queue')
         const data = response.data
@@ -548,7 +552,10 @@
     console.log(serializedBookBindData)
 
     const laminationDashboard = () => {
+      
+
       return (
+        
         <GenericDashBoard
           dashboardHeader={[
             "Student ID",
@@ -582,6 +589,7 @@
       );
     };
     return (
+      
       <div className="student-dashboard flex flex-col">
         <div className="student-dashboard-content flex flex-col m-auto my-0 w-full max-w-[1200px]">
           <h1 className="text-center mt-[5rem] text-[clamp(1.5rem,3vw,2.5rem)] text-navy font-bold">

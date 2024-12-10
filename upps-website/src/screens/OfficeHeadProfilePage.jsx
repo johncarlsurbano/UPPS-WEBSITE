@@ -1,5 +1,5 @@
 import Button from "../components/Button";
-import userProfileImage from "../assets/tutin.jpg";
+import userProfileImage from "../assets/tutin.png";
 import { HeaderLoggedIn } from "../components/HeaderLoggedIn";
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
