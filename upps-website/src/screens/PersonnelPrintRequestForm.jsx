@@ -289,7 +289,7 @@ export const PersonnelPrintRequestForm = () => {
             <input type="number" placeholder="Quantity" onChange={(e) => setPrintDetails({ ...printDetails, quantity: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
             </div>
             <div className="w-full max-w-[100%rem] flex flex-col">
-              <p className="text-center">Duplex</p>
+              <p className="text-center">Back to back</p>
             <input type="checkbox" onChange={(e) => setPrintDetails({ ...printDetails, duplex: e.target.checked })} className="h-[1.5rem]"/>
             </div>
             {user.role === "Chairman" ? (

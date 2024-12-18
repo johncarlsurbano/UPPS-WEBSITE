@@ -75,6 +75,11 @@ export const RequestDetailsModal = ({ requestData, onClose }) => {
               <p className="text-base">N/A</p> 
             </div>
           )}
+
+          <div>
+            <h1 className='text-xl'>Remarks</h1>
+            <p className='text-base'>{requestData.personnel_print_request.remarks}</p>
+          </div>
           
         </div>
 

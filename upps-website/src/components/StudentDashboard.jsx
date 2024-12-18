@@ -12,6 +12,7 @@
   import { StudentLaminationDetails } from "./StudentLaminationDetails";
   import { useNavigate } from "react-router-dom"
   import Alert from "../components/Alert.jsx";
+  import Swal from "sweetalert2"
   
 
 
@@ -204,6 +205,11 @@
 
           fetchStudentRequest();
           console.log(data)
+          Swal.fire({
+            title: "Success!",
+            text: "Request Completed!",
+            icon: "success"
+          });
         }
         else if (servicettype === "Book Binding"){
           const response = await axios.delete(`http://127.0.0.1:8000/api/deletestudent/request/bookbind/${id}/`)
@@ -211,6 +217,11 @@
 
           fetchBookBind();
           console.log(data)
+          Swal.fire({
+            title: "Success!",
+            text: "Request Completed!",
+            icon: "success"
+          });
         }
         else if (servicettype === 'Lamination'){
           const response = await axios.delete(`http://127.0.0.1:8000/api/deletestudent/request/lamination/${id}/`)
@@ -218,6 +229,11 @@
 
           fetchLamination();
           console.log(data)
+          Swal.fire({
+            title: "Success!",
+            text: "Request Completed!",
+            icon: "success"
+          });
         }
         else {
           console.log("UNDEFINED SERVICE TYPE! ")

@@ -189,15 +189,22 @@ class StudentView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         # Extract PDF file from request
         pdf_file = request.FILES.get('pdf')
-        page_count = 0
-
+        
         # Calculate the number of pages
         if pdf_file:
+            page_count = 0
             try:
                 reader = PdfReader(pdf_file)
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # If no PDF, get the page count manually from the input
+            page_count = request.data.get('page_count')
+            if not page_count or not page_count.isdigit():
+                return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            page_count = int(page_count)
             
         print_request_details_id = request.data.get('print_request_details')
         if not print_request_details_id:
@@ -533,7 +540,7 @@ class CreateRequestView(generics.ListCreateAPIView):
         # Extract PDF file from request
         pdf_file = request.FILES.get('pdf')
         page_count = 0
-
+        
         # Calculate the number of pages
         if pdf_file:
             try:
@@ -541,6 +548,13 @@ class CreateRequestView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # If no PDF, get the page count manually from the input
+            page_count = request.data.get('page_count')
+            if not page_count or not page_count.isdigit():
+                return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            page_count = int(page_count)
         
 
         print_request_details_id = request.data.get('print_request_details')
@@ -685,6 +699,11 @@ class DeletePrintingInventoryView(generics.RetrieveDestroyAPIView):
 ##################################################################################################
 # BOOK BIND VIEWS 
 ##################################################################################################
+
+class CreateBookBindType(generics.ListCreateAPIView):
+    queryset = BookBindType.objects.all()
+    serializer_class = TypeBookBindSerializer
+
 class CreateBookBindRequestType(generics.ListCreateAPIView):
     queryset = BookBindRequestType.objects.all()
     serializer_class = BookBindRequestTypeSerializer
@@ -704,15 +723,23 @@ class CreateBookBindPersonnelRequestView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         # Extract PDF file from request
         pdf_file = request.FILES.get('pdf')
-        page_count = 0
+        
 
         # Calculate the number of pages
         if pdf_file:
+            page_count = 0
             try:
                 reader = PdfReader(pdf_file)
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # If no PDF, get the page count manually from the input
+            page_count = request.data.get('page_count')
+            if not page_count or not page_count.isdigit():
+                return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            page_count = int(page_count)
             
         book_binding_request_details_id = request.data.get('book_binding_request_details')
         if not book_binding_request_details_id:
@@ -837,15 +864,23 @@ class CreateBookBindStudentRequestView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         # Extract PDF file from request
         pdf_file = request.FILES.get('pdf')
-        page_count = 0
 
         # Calculate the number of pages
         if pdf_file:
+            page_count = 0
             try:
                 reader = PdfReader(pdf_file)
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # If no PDF, get the page count manually from the input
+            page_count = request.data.get('page_count')
+            if not page_count or not page_count.isdigit():
+                return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            page_count = int(page_count)
+            
             
         book_binding_request_details_id = request.data.get('book_binding_request_details')
 
@@ -970,6 +1005,10 @@ class DeleteStudentBookBindReadyToClaimView(generics.DestroyAPIView):
 # LAMINATION VIEWS 
 ##################################################################################################
 
+class CreateLaminationType(generics.ListCreateAPIView):
+    queryset = LaminationType.objects.all()
+    serializer_class = TypeLaminationSerializer
+
 
 class CreateLaminationTypeView(generics.ListCreateAPIView):
     queryset = LaminationRequestType.objects.all()
@@ -999,6 +1038,13 @@ class CreateLaminationPersonnelRequestView(generics.ListCreateAPIView):
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # If no PDF, get the page count manually from the input
+            page_count = request.data.get('page_count')
+            if not page_count or not page_count.isdigit():
+                return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            page_count = int(page_count)
             
         lamination_request_details_id = request.data.get('lamination_request_details')
 
@@ -1121,15 +1167,23 @@ class CreateLaminationStudentRequestView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         # Extract PDF file from request
         pdf_file = request.FILES.get('pdf')
-        page_count = 0
+        
 
         # Calculate the number of pages
         if pdf_file:
+            page_count = 0
             try:
                 reader = PdfReader(pdf_file)
                 page_count = len(reader.pages)
             except Exception as e:
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # If no PDF, get the page count manually from the input
+            page_count = request.data.get('page_count')
+            if not page_count or not page_count.isdigit():
+                return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
+            page_count = int(page_count)
             
         lamination_request_details_id = request.data.get('lamination_request_details')
 

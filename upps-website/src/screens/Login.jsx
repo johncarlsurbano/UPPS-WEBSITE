@@ -61,7 +61,7 @@ const Login = () => {
         } else {
           switch (userData.role) {
             case "Personnel":
-              navigate("/personnel/form/");
+              navigate("/personnel/dashboard/");
               break;
             case "Chairman":
               navigate("/chairman/dashboard");

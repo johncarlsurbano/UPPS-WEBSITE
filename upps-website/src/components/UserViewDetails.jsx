@@ -12,7 +12,7 @@ export const UserViewDetails = ({ request, onClose, handleAcceptUser, handleDeni
   return (
     <div className=" flex flex-col fixed inset-0 bg-black bg-opacity-50 justify-center items-center z-40">
       <div
-        className="personel-view-details-main flex flex-col bg-[#ffff] mx-auto w-full max-w-[500px] h-[400px]"
+        className="personel-view-details-main flex flex-col bg-[#ffff] mx-auto w-full max-w-[500px] h-[fit-content] rounded-[10px]"
         style={{ boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.25)" }}
       >
         <div className="flex justify-between mx-8">
@@ -37,7 +37,7 @@ export const UserViewDetails = ({ request, onClose, handleAcceptUser, handleDeni
             style={'flex-col text-center'}
           />
           <div className="personnel-request-details w-full max-w-[100%]">
-            <div className="personel-view-details-buttons w-full max-w-[22rem] flex text-center justify-between">
+            <div className="personel-view-details-buttons w-full max-w-[22rem] flex text-center justify-between mb-4">
               <Button
                 title="Accept"
                 style="bg-[#2a8400] w-full max-w-[10rem] text-white py-[0.5rem] rounded-[100rem]"

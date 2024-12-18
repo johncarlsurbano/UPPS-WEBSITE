@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 export const QueueRequest = ({
     queueDetail,
     selectColor,
-    optionColor,
+    color,
     handleDetailsClick,
     handleQueueStatus,
     isTextStatus,
@@ -41,13 +41,13 @@ export const QueueRequest = ({
         "Type": printRequestDetails ? printRequestDetails.printing_type.printing_type_name : 'N/A',
         "Request-Type": printRequestDetails ? printRequestDetails.request_type.request_type_name : 'N/A',
         Status: isTextStatus ? (
-            <span style={{ color: optionColor, fontWeight: 'bold' }}>
+            <span style={{ color: 'black', fontWeight: 'bold',  }}>
                 {queueDetail.queue_status}
             </span>
         ) : (
             <select
                 value={queueDetail.queue_status}
-                style={{ color: optionColor }}
+                style={{ color: color }}
                 className="dashboard-table-options font-bold"
                 onChange={(e) => {
                     selectColor(e.target.value, queueDetail.id);

@@ -9,13 +9,14 @@ export const InventoryAddItem = ({ onClose }) => {
       "paper_type": "",
       "price": null
     },
-    "onHand": null
+    "rim": null,
+    "onHand": 0
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "onHand") {
+    if (name === "rim") {
       setFormData((prevData) => ({
         ...prevData,
         [name]: Number(value),
@@ -85,11 +86,11 @@ export const InventoryAddItem = ({ onClose }) => {
               </select>
             </div>
             <div className="flex flex-col">
-              <label className="font-medium">On-Hand</label>
+              <label className="font-medium">Rim</label>
               <input
                 type="number"
-                name="onHand"
-                value={formData.onHand}
+                name="rim"
+                value={formData.rim}
                 onChange={handleChange}
                 className="border border-gray-300 rounded-md p-2 focus:outline-none focus:border-blue-500"
               />

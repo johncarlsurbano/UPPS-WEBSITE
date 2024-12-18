@@ -92,7 +92,10 @@ export const StudentPrintDetails = ({ requestData, onClose, onClick}) => {
         )}
           </div>
         </div>
-
+        <div>
+          <h1 className='text-xl'>Remarks</h1>
+          <p>{personnelRequest.remarks}</p>
+        </div>
         <button
           className="w-full mt-6 py-3 text-[#ffffff] bg-[#17153a] font-bold rounded-lg hover:bg-[#dca10f] transition-all duration-200 transform hover:scale-[1.05]"
           onClick={onClose}

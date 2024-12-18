@@ -65,6 +65,7 @@ urlpatterns = [
     ##############################
 
     ##### PERSONNEL
+    path('bookbind/type', CreateBookBindType.as_view(), name="bookbindtype"),
     path('bookbind/requesttype', CreateBookBindRequestType.as_view(), name="requesttype"),
     path('bookbind/requestdetails', CreateBookBindRequestDetailsView.as_view(), name="requestdetails"),
     path('requestdetails', GetBookBindRequestDetailsView.as_view(), name="getrequestdetails"),
@@ -92,8 +93,8 @@ urlpatterns = [
     ##### LAMINATION URLS
     ##############################
     ##### PERSONNEL
-
-    path('lamination/type', CreateLaminationTypeView.as_view(), name="laminationtype"),
+    path('lamination/type', CreateLaminationType.as_view(), name="createlamination"),
+    path('lamination/requesttype', CreateLaminationTypeView.as_view(), name="laminationtype"),
     path('lamination/requestdetails', CreateLaminationRequestDetailsView.as_view(), name="laminationrequestdetails"),
     path('getlamination/requestdetails', GetLaminationRequestDetailsView.as_view(), name="getlaminationrequestdetails"),
     path('personnel/request/lamination', CreateLaminationPersonnelRequestView.as_view(), name="laminationrequest"),

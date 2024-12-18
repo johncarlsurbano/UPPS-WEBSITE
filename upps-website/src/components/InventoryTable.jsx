@@ -136,7 +136,7 @@ export const InventoryTable = () => {
     "Item Name",
     "Item ID",
     "Category",
-    "On-Hand",
+    "Rim",
     "Price",
     "Updated",
     "Status",

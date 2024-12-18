@@ -90,7 +90,6 @@ export const StudentBookBindDetails = ({ requestData, onClose, onClick}) => {
           <p className="text-base">N/A</p>
         )}
           </div>
-
           <div>
           <h1 className='text-xl'>Remarks</h1>
           <p>{personnelRequest.remarks}</p>

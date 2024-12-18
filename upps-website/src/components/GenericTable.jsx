@@ -29,7 +29,7 @@
                   </thead>
                   <tbody>
                     {sortedData.map((row, rowIndex) => (
-                      <tr key={rowIndex} className={`${row.isUrgent ? 'bg-red-400' : ''}`}>
+                      <tr key={rowIndex} className={`${row.isUrgent ? 'bg-red-500 text-white' : ''}`}>
                         {headers.map((header, colIndex) => (
                           <td key={colIndex} className="px-8 py-4">
                             {typeof row[header] === "string" || typeof row[header] === "number" ? (

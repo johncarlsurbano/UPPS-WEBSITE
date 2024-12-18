@@ -11,6 +11,7 @@ import { LaminationQueue } from "./LaminationQueue.jsx";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { data } from "autoprefixer";
+import Swal from 'sweetalert2'
 
 export const PersonnelDashboard = ({userRole}) => {
   
@@ -121,6 +122,11 @@ export const PersonnelDashboard = ({userRole}) => {
         })
         const data = response.data
         console.log(data)
+        Swal.fire({
+          title: "Success!",
+          text: "Request Completed!",
+          icon: "success"
+        });
       } 
       else {
         const response = await axios.post('http://127.0.0.1:8000/api/bill/', {
@@ -130,7 +136,13 @@ export const PersonnelDashboard = ({userRole}) => {
         )
         const data = response.data
         console.log(data)
+        Swal.fire({
+          title: "Success!",
+          text: "Request Completed!",
+          icon: "success"
+        });
       }
+      fetchQueueRequests()
       
 
 
@@ -202,6 +214,7 @@ export const PersonnelDashboard = ({userRole}) => {
         handleQueueStatus,
         selectColor: selectInitialColor,
         closeModal,
+        color: 'black'
       }))
 
       const mappedReadyToClaimData = filteredReadyToClaimRequests.map((queueDetail) => QueueRequest({
@@ -250,6 +263,15 @@ export const PersonnelDashboard = ({userRole}) => {
       const data = response.data
 
       console.log(data)
+      
+      Swal.fire({
+        title: "Success!",
+        text: "Request Completed!",
+        icon: "success"
+      });
+
+      fetchBookBind()
+      
 
     } catch (error) {
       console.error(error)
@@ -343,11 +365,18 @@ export const PersonnelDashboard = ({userRole}) => {
       const response = await axios.post('http://127.0.0.1:8000/api/bill/',{
         "type": "JobOrderA",
         "lamination_request": requestDetail
-    
       })
       const data = response.data
 
       console.log(data)
+      
+      Swal.fire({
+        title: "Success!",
+        text: "Request Completed!",
+        icon: "success"
+      });
+
+      fetchLamination()
 
     } catch (error) {
       console.error(error)

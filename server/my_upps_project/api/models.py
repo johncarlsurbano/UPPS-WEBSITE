@@ -21,7 +21,7 @@ class PaperType(models.Model):
         null=True,
         blank=True
     )
-
+    
 
     def __str__(self):
         return self.paper_type
@@ -97,6 +97,7 @@ class PersonnelPrintRequest(models.Model):
     updated_at = models.DateTimeField(auto_now=True) 
     page_count = models.IntegerField(null=True, blank=True)
     urgent = models.BooleanField(default=False, blank=True)
+    remarks = models.CharField(max_length=255, blank=True)
 
 
 
@@ -137,6 +138,7 @@ class StudentPrintForm(models.Model):
     pdf = models.FileField(upload_to="uploads/", null=True)
     print_request_details = models.ForeignKey(PrintRequestDetails, on_delete=models.CASCADE)
     page_count = models.IntegerField(null=True, blank=True)
+    remarks = models.CharField(max_length=255, blank=True)
 
 
 
@@ -163,9 +165,15 @@ class BookBindRequestType(models.Model):
     def __str__(self):
         return self.request_type_name
     
-    
+class BookBindType(models.Model):
+    book_bind_type_name = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.book_bind_type_name
+    
+    
 class BookBindingRequestDetails(models.Model):
+    book_bind_type = models.ForeignKey(BookBindType, on_delete=models.CASCADE)
     request_type = models.ForeignKey(BookBindRequestType, on_delete=models.CASCADE)
     paper_type = models.ForeignKey(PaperType, on_delete=models.CASCADE)
     quantity = models.IntegerField()
@@ -216,8 +224,15 @@ class LaminationRequestType(models.Model):
     def __str__(self):
         return self.request_type_name
     
+class LaminationType(models.Model):
+    lamination_type_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.lamination_type_name
+    
 
 class LaminationRequestDetails(models.Model):
+    lamination_type = models.ForeignKey(LaminationType, on_delete=models.CASCADE)
     request_type = models.ForeignKey(LaminationRequestType, on_delete=models.CASCADE)
     paper_type = models.ForeignKey(PaperType, on_delete=models.CASCADE)
     quantity = models.IntegerField()
@@ -350,10 +365,14 @@ class LaminationStudentQueue(models.Model):
 class PrintingInventory(models.Model):
     paper_type = models.OneToOneField(PaperType, on_delete=models.CASCADE)
     onHand = models.IntegerField()
+    rim = models.IntegerField(blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=50,editable=False)
+    status = models.CharField(max_length=50, editable=False)
 
     def save(self, *args, **kwargs):
+        # Calculate the rim value based on the onHand value
+        self.rim = self.onHand // 500  # Integer division to calculate full rims
+
         # Ensure correct status before saving
         if self.onHand == 0:
             self.status = 'Out-of-Stock'
@@ -361,7 +380,8 @@ class PrintingInventory(models.Model):
             self.status = 'Low-Stock'
         else:
             self.status = 'In-Stock'
-        super().save(*args, **kwargs)
+
+        super().save(*args, **kwargs)  # Call the parent save method
 
 
 

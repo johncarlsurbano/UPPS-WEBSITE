@@ -17,6 +17,8 @@ export const StudentForm = () => {
   const [isDisabled, setIsDisabled] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState("1");
   const [bookBindRequestType, setBookBindRequestType] = useState([])
+  const [bookBindType, setBookBindType] = useState([])
+  const [laminationType, setLaminationType] = useState([])
   const [laminationRequestType, setLaminationRequestType] = useState([])
   const [errors, setErrors] = useState({});
 
@@ -32,8 +34,27 @@ export const StudentForm = () => {
     if (!data.last_name.trim()) newErrors.last_name = "Last name is required.";
     if (!data.email.trim() || !/\S+@\S+\.\S+/.test(data.email)) newErrors.email = "Valid email is required.";
     if (!data.student_id) newErrors.student_id = "Student number is required.";
-    if (!data.pdf) newErrors.pdf = "File upload is required.";
+    if (!data.contact_number) newErrors.contact_number = "Student Contact Number is required.";
 
+    if (selectedServiceType == "1" && !printDetails.quantity) {
+      newErrors.quantity = "Quantity is required for printing requests.";
+    }
+  
+    if (selectedServiceType == "2" && !bookBindDetails.quantity) {
+      newErrors.quantity = "Quantity is required for book binding requests.";
+    }
+  
+    if (selectedServiceType == "3" && !laminationDetails.quantity) {
+      newErrors.quantity = "Quantity is required for lamination requests.";
+    }
+
+    if (printDetails.printing_type == "1" || bookBindDetails.printing_type == "1" || laminationDetails.printing_type == "1"){
+      if (!data.pdf) newErrors.pdf = "File upload is required.";
+    }
+    else{
+      if (!data.page_count) newErrors.page_count = "Page count is required.";
+    }
+   
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,7 +81,9 @@ export const StudentForm = () => {
     //
 
     fetchDropdownData("http://127.0.0.1:8000/api/bookbind/requesttype", setBookBindRequestType)
-    fetchDropdownData("http://127.0.0.1:8000/api/lamination/type", setLaminationRequestType)
+    fetchDropdownData("http://127.0.0.1:8000/api/lamination/requesttype", setLaminationRequestType)
+    fetchDropdownData("http://127.0.0.1:8000/api/bookbind/type", setBookBindType),
+    fetchDropdownData("http://127.0.0.1:8000/api/lamination/type", setLaminationType)
 
   }, []);
 
@@ -72,7 +95,8 @@ export const StudentForm = () => {
     student_id: null,
     contact_number: null,
     pdf: null,
-    remarks: ""
+    remarks: "",
+    page_count: null,
   });
 
   const [printDetails, setPrintDetails] = useState({
@@ -80,18 +104,21 @@ export const StudentForm = () => {
     quantity: null,
     printing_type: null,
     paper_type: null,
+    request_type: 5,
   });
 
   const [bookBindDetails, setBookBindDetails] = useState({
     quantity: null,
     request_type: null,
     paper_type: null,
+    book_bind_type: null,
   });
 
   const [laminationDetails, setLaminationDetails] = useState({
     quantity: null,
     request_type: null,
     paper_type: null,
+    lamination_type: null,
   });
 
   
@@ -111,12 +138,6 @@ export const StudentForm = () => {
       }));
     }
 
-    if (requestType.length > 0) {
-      setPrintDetails((prevDetails) => ({
-        ...prevDetails,
-        request_type: requestType[0].id,
-      }));
-    }
 
     if (department.length > 0) {
       setData((prevDetails) => ({
@@ -139,6 +160,14 @@ export const StudentForm = () => {
       }));
     }
 
+    if (bookBindType.length > 0) {
+        setBookBindDetails((prevDetails) => ({
+        ...prevDetails,
+        book_bind_type: bookBindType[0].id,
+      }));
+    }
+
+
 
     if (paperType.length > 0) {
         setLaminationDetails((prevDetails) => ({
@@ -154,6 +183,13 @@ export const StudentForm = () => {
       }));
     }
 
+    if (laminationType.length > 0) {
+        setLaminationDetails((prevDetails) => ({
+        ...prevDetails,
+        lamination_type: laminationType[0].id,
+      }));
+    }
+
     if (serviceType.length > 0) {
       setData((prevDetails) => ({
         ...prevDetails,
@@ -161,12 +197,13 @@ export const StudentForm = () => {
       }))
     }
 
-  }, [printingType, paperType, department, requestType, serviceType, bookBindRequestType, laminationRequestType]);
+  }, [printingType, paperType, department, requestType, serviceType, bookBindRequestType, laminationRequestType, bookBindType, laminationType]);
 
+  console.log(printDetails.request_type)
   
   const personnelDetails = async (ids) => {
     try {
-    if(selectedServiceType === "1") {
+    if(selectedServiceType == "1") {
         try {
             const formData = new FormData();
             formData.append("service_type", 1); 
@@ -175,15 +212,18 @@ export const StudentForm = () => {
             formData.append("email", data.email);
             formData.append("department", data.department);
             formData.append("student_id", data.student_id)
-            formData.append("pdf", data.pdf);
             formData.append("contact_number", data.contact_number)
             formData.append("print_request_details", ids);
+            formData.append("remarks", data.remarks);
 
-            console.log("Logging formData contents:");
-            for (let pair of formData.entries()) {
-                console.log(`${pair[0]}: ${pair[1]}`);
+            if (printDetails.printing_type == 1) {
+              formData.append("pdf", data.pdf);
             }
-            
+            else {
+              formData.append("page_count", data.page_count);
+            }
+
+
             const studentRequest = await axios.post("http://127.0.0.1:8000/api/studentform/", formData)
 
             const response = await axios.post("http://127.0.0.1:8000/api/student/paymentslip/", {
@@ -212,7 +252,7 @@ export const StudentForm = () => {
               });
         }
     }
-    else if(selectedServiceType === "2") {
+    else if(selectedServiceType == "2") {
         try {
             const formData = new FormData();
             formData.append('service_type', 2)
@@ -221,10 +261,19 @@ export const StudentForm = () => {
             formData.append("email", data.email);
             formData.append("department", data.department);
             formData.append("student_id", data.student_id)
-            formData.append("pdf", data.pdf);
             formData.append("contact_number", data.contact_number)
             formData.append("book_binding_request_details", ids);
             formData.append("remarks", data.remarks)
+            if (bookBindDetails.book_bind_type == 1) {
+              formData.append("pdf", data.pdf);
+            }
+            else {
+              formData.append("page_count", data.page_count);
+            }
+
+            for (let [key, value] of formData.entries()) {
+              console.log(`${key}:`, value);
+            }
       
             console.log(data.pdf);
             
@@ -258,7 +307,7 @@ export const StudentForm = () => {
             
         }
     }
-    else if(selectedServiceType === "3") {
+    else if(selectedServiceType == "3") {
         try {
             const formData = new FormData();
             formData.append('service_type', 3)
@@ -267,10 +316,16 @@ export const StudentForm = () => {
             formData.append("email", data.email);
             formData.append("department", data.department);
             formData.append("student_id", data.student_id)
-            formData.append("pdf", data.pdf);
             formData.append("contact_number", data.contact_number)
             formData.append("lamination_request_details", ids);
             formData.append("remarks", data.remarks)
+
+            if (laminationDetails.lamination_type == 1) {
+              formData.append("pdf", data.pdf);
+            }
+            else {
+              formData.append("page_count", data.page_count);
+            }
 
 
             console.log(data.pdf);
@@ -340,7 +395,7 @@ export const StudentForm = () => {
 
     try {
       setIsDisabled(true)
-      if(selectedServiceType === "1"){
+      if(selectedServiceType == "1"){
         const formData = {
             duplex: printDetails.duplex,
             quantity: printDetails.quantity,
@@ -353,12 +408,13 @@ export const StudentForm = () => {
         await personnelDetails(printRequestResponse.data.id);
 
     
-      } else if (selectedServiceType === "2") {
+      } else if (selectedServiceType == "2") {
         setIsDisabled(true)
         const formData = {
             quantity: bookBindDetails.quantity,
             paper_type: bookBindDetails.paper_type,
             request_type: bookBindDetails.request_type,
+            book_bind_type: bookBindDetails.book_bind_type
           }
           const bookBindRequestResponse = await axios.post("http://127.0.0.1:8000/api/bookbind/requestdetails", formData)
           
@@ -366,12 +422,13 @@ export const StudentForm = () => {
           
           console.log(formData)
     
-      } else if (selectedServiceType === "3") {
+      } else if (selectedServiceType == "3") {
         setIsDisabled(true)
         const formData = {
             quantity: laminationDetails.quantity,
             paper_type: laminationDetails.paper_type,
             request_type: laminationDetails.request_type,
+            lamination_type: laminationDetails.lamination_type
           }
           const laminationRequestResponse = await axios.post("http://127.0.0.1:8000/api/lamination/requestdetails", formData)
           
@@ -461,6 +518,7 @@ export const StudentForm = () => {
                   setData({...data, contact_number: data.contact_number.slice(0, -1) })
                 }
               }  } className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+              {errors.contact_number && <p className="text-red-500 text-sm mt-1">{errors.contact_number}</p>}
               </div>
             </div>
            
@@ -495,13 +553,14 @@ export const StudentForm = () => {
     </select>
   </div>
 
-  {selectedServiceType === "1" ? (
-    <div className="printing-request-form-content-inputs-right items-center">
+  {selectedServiceType == "1" ? (
+    <div className="printing-request-form-content-inputs-right items-center p-0">
     <div className="flex w-full max-w-[100%] gap-[1rem]">
     <div className="w-full max-w-[100%]">
       <p>Type</p>
-    <select onChange={(e) => setPrintDetails({ ...printDetails, printing_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+    <select value={printDetails.printing_type || ""}  onChange={(e) => setPrintDetails({ ...printDetails, printing_type: e.target.value })} className="w-full max-w-[100%] py-[0.66rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
       {printingType.map((type, index) => (
+        
         <option key={index} value={type.id}>{type.printing_type_name}</option>
       ))}
     </select>
@@ -509,9 +568,9 @@ export const StudentForm = () => {
 
     <div className="w-full max-w-[100%]">
       <p>Request Type</p>
-      <select onChange={(e) => setPrintDetails({ ...printDetails, request_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+      <select onChange={(e) => setPrintDetails({ ...printDetails, request_type: e.target.value })} className="w-full max-w-[100%] py-[0.66rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
         {requestType.map((type, index) => (
-          type.request_type_name !== "Examination" && (
+          type.request_type_name == "Basic Printing" && (
             <option key={index} value={type.id}>{type.request_type_name}</option>
           )
         ))}
@@ -520,7 +579,7 @@ export const StudentForm = () => {
 
     <div className="w-full max-w-[100%]">
       <p>Paper Size</p>
-    <select onChange={(e) => setPrintDetails({ ...printDetails, paper_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+    <select onChange={(e) => setPrintDetails({ ...printDetails, paper_type: e.target.value })} className="w-full max-w-[100%] py-[0.66rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
       {paperType.map((type, index) => (
         <option key={index} value={type.id}>{type.paper_type}</option>
       ))}
@@ -530,36 +589,59 @@ Change     </select>
 
     <div className="flex h-[fit-content] w-full max-w-[full] items-center gap-[1rem]">
     <div className="w-full max-w-[100%]">
-      <p>Number of Copies</p>
+      <p>No. of Copies</p>
     <input type="number" placeholder="Number of Copies" onChange={(e) => setPrintDetails({ ...printDetails, quantity: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+    {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>}
     </div>
     <div className="w-full max-w-[100%rem] flex flex-col">
       <p className="text-center">Back to back</p>
     <input type="checkbox" onChange={(e) => setPrintDetails({ ...printDetails, duplex: e.target.checked })} className="h-[1.5rem]"/>
     </div>
-    </div>
-   
     <div>
-        <label className="block text-sm font-medium mb-1">Upload File</label>
-        <input
-          accept=".pdf"
-          type="file"
-          onChange={(e) => setData({ ...data, pdf: e.target.files[0]})}
-          className={`w-full p-2 border rounded-lg ${
-            errors.pdf ? "border-red-500" : "border-gray-300"
-          }`}
-        />
-        {errors.pdf && <p className="text-red-500 text-sm mt-1">{errors.pdf}</p>}
+        <p>Remarks:</p>
+        <textarea className="border-black border-1" rows={2} cols={23} onChange={(e) => setData({
+            ...data, remarks: e.target.value,
+        })}/>
     </div>
-    <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
+    </div>
+    {printDetails.printing_type == "1" ? (
+      <div>
+      <label className="block text-sm font-medium mb-1 text-center">Upload File</label>
+      <input
+        accept=".pdf"
+        type="file"
+        onChange={(e) => setData({ ...data, pdf: e.target.files[0]})}
+        className={`w-full p-2 border rounded-lg ${
+          errors.pdf ? "border-red-500" : "border-gray-300"
+        }`}
+      />
+      {errors.pdf && <p className="text-red-500 text-sm mt-1">{errors.pdf}</p>}
+    </div>
+    ) : (
+      <div className="w-full max-w-[100%]">
+        <p>Number of Pages</p>
+        <input type="number" placeholder="No. of Pages" onChange={(e) => setData({ ...data, page_count: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+        {errors.page_count && <p className="text-red-500 text-sm mt-1">{errors.page_count}</p>}
+      </div>
+    )}
+    <button className="mb-[1rem]" type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
   </div>
-    ) : selectedServiceType === "2" ? (
-        <div className="printing-request-form-content-inputs-right items-center">
+    ) : selectedServiceType == "2" ? (
+        <div className="printing-request-form-content-inputs-right items-center gap-[2.7rem] p-0">
             <div className="flex w-full max-w-[100%] gap-[1rem]">
 
             <div className="w-full max-w-[100%]">
+              <p>Type</p>
+            <select onChange={(e) => setBookBindDetails({ ...bookBindDetails, book_bind_type: e.target.value })} className="w-full max-w-[100%] py-[0.65rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+              {bookBindType.map((type, index) => (
+                <option key={index} value={type.id}>{type.book_bind_type_name}</option>
+              ))}
+            </select>
+            </div>
+
+            <div className="w-full max-w-[100%]">
               <p>Request Type</p>
-            <select onChange={(e) => setBookBindDetails({ ...bookBindDetails, request_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+            <select onChange={(e) => setBookBindDetails({ ...bookBindDetails, request_type: e.target.value })} className="w-full max-w-[100%] py-[0.65rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
               {bookBindRequestType.map((type, index) => (
                 <option key={index} value={type.id}>{type.request_type_name}</option>
               ))}
@@ -568,7 +650,7 @@ Change     </select>
 
             <div className="w-full max-w-[100%]">
               <p>Paper Size</p>
-            <select onChange={(e) => setBookBindDetails({ ...bookBindDetails, paper_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+            <select onChange={(e) => setBookBindDetails({ ...bookBindDetails, paper_type: e.target.value })} className="w-full max-w-[100%] py-[0.65rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
               {paperType.map((type, index) => (
                 <option key={index} value={type.id}>{type.paper_type}</option>
               ))}
@@ -580,6 +662,7 @@ Change     </select>
             <div className="w-full max-w-[100%]">
               <p>Quantity</p>
             <input type="number" placeholder="Qty" onChange={(e) => setBookBindDetails({ ...bookBindDetails, quantity: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+            {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>}
             </div>
             <div>
                 <p>Remarks:</p>
@@ -588,23 +671,40 @@ Change     </select>
                 })}/>
             </div>
             </div>
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Upload File</label>
+            {bookBindDetails.book_bind_type == "1" ? (
+              <div>
+                <label className="block text-sm font-medium mb-1 text-center">Upload File</label>
                 <input
-                accept=".pdf"
-                type="file"
-                onChange={(e) => setData({ ...data, pdf: e.target.files[0]})}
-                className={`w-full p-2 border rounded-lg ${
+                  accept=".pdf"
+                  type="file"
+                  onChange={(e) => setData({ ...data, pdf: e.target.files[0]})}
+                  className={`w-full p-2 border rounded-lg ${
                     errors.pdf ? "border-red-500" : "border-gray-300"
-                }`}
+                  }`}
                 />
                 {errors.pdf && <p className="text-red-500 text-sm mt-1">{errors.pdf}</p>}
             </div>
-            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
+            ) : (
+              <div className="w-full max-w-[100%]">
+                <p>Number of Pages</p>
+                <input type="number" placeholder="No. of Pages" onChange={(e) => setData({ ...data, page_count: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+                {errors.page_count && <p className="text-red-500 text-sm mt-1">{errors.page_count}</p>}
+              </div>
+            )}
+            <button className="mb-[1rem]" type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
-    ) : selectedServiceType === "3" ? (
-        <div className="printing-request-form-content-inputs-right items-center">
+    ) : selectedServiceType == "3" ? (
+        <div className="printing-request-form-content-inputs-right items-center p-0">
             <div className="flex w-full max-w-[100%] gap-[1rem]">
+
+            <div className="w-full max-w-[100%]">
+              <p>Type</p>
+            <select onChange={(e) => setLaminationDetails({ ...laminationDetails, lamination_type: e.target.value })} className="w-full max-w-[100%] py-[0.5rem] pl-[0.5rem] rounded-[5px] border-black border-[1px]">
+              {laminationType.map((type, index) => (
+                <option key={index} value={type.id}>{type.lamination_type_name}</option>
+              ))}
+            </select>
+            </div>
 
             <div className="w-full max-w-[100%]">
               <p>Request Type</p>
@@ -629,6 +729,7 @@ Change     </select>
             <div className="w-full max-w-[100%]">
               <p>Quantity</p>
             <input type="number" placeholder="Quantity" onChange={(e) => setLaminationDetails({ ...laminationDetails, quantity: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+            {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>}
             </div>
             <div>
                 <p>Remarks:</p>
@@ -637,19 +738,27 @@ Change     </select>
                 })}/>
             </div>
             </div>
-            <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Upload File</label>
-                <input
-                type="file"
+            {laminationDetails.lamination_type == "1" ? (
+              <div>
+              <label className="block text-sm font-medium mb-1 text-center">Upload File</label>
+              <input
                 accept=".pdf"
+                type="file"
                 onChange={(e) => setData({ ...data, pdf: e.target.files[0]})}
                 className={`w-full p-2 border rounded-lg ${
-                    errors.pdf ? "border-red-500" : "border-gray-300"
+                  errors.pdf ? "border-red-500" : "border-gray-300"
                 }`}
-                />
-                {errors.pdf && <p className="text-red-500 text-sm mt-1">{errors.pdf}</p>}
+              />
+              {errors.pdf && <p className="text-red-500 text-sm mt-1">{errors.pdf}</p>}
             </div>
-            <button type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
+            ) : (
+              <div className="w-full max-w-[100%]">
+                <p>Number of Pages</p>
+                <input type="number" placeholder="No. of Pages" onChange={(e) => setData({ ...data, page_count: e.target.value })} className="py-[0.5rem] pl-[0.5rem] rounded-[5px]"/>
+                {errors.page_count && <p className="text-red-500 text-sm mt-1">{errors.page_count}</p>}
+              </div>
+            )}
+            <button className="mb-[1rem]" type="submit" id="printing-submit-request" disabled={isDisabled}>{isDisabled ? 'Processing...' : 'Submit Request'}</button>
           </div>
     ) : null}
     </div>

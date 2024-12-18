@@ -8,7 +8,7 @@ const PersonnelRequestDetails = () => {
         style={{ boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.25)" }}
       >
         <h1 className="self-center">
-          View <span id="main-span">Personnel</span> Request
+          View <span id="main-span">Personnel</span> Requesta
         </h1>
         <div className="personnel-view-details-content flex flex-col mt-16 pl-16 pr-16 h-[100%]">
           <div className="personnel-view-profile-details flex  w-full max-w-[29rem] justify-between items-center mb-16 h-[10rem]">

@@ -383,24 +383,34 @@ class AddItemPrintingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        # Extract paper_type data from validated data
-        paper_type_data = validated_data.pop('paper_type')
-        
-        # Find or create the PaperType instance
-        paper_type, created = PaperType.objects.get_or_create(**paper_type_data)
-        
-        # Check if the paper type already exists in the inventory
-        inventory_item = PrintingInventory.objects.filter(paper_type=paper_type).first()
-        
-        if inventory_item:
-            # If the item already exists, just update the onHand value by adding the new quantity
-            inventory_item.onHand += validated_data.get('onHand', 0)
-            inventory_item.save()
-            return inventory_item
-        else:
-            # If the paper type doesn't exist, create a new PrintingInventory entry
-            printing_inventory = PrintingInventory.objects.create(paper_type=paper_type, **validated_data)
-            return printing_inventory
+     # Extract paper_type data from validated data
+     paper_type_data = validated_data.pop('paper_type')
+
+     # Find or create the PaperType instance
+     paper_type, created = PaperType.objects.get_or_create(**paper_type_data)
+
+     # Extract the rim value (default to 0 if not provided)
+     rim = validated_data.pop('rim', 0)
+
+     # Calculate additional onHand based on the rim
+     additional_onHand = rim * 500  # 1 rim = 500 onHand
+
+     # Check if the paper type already exists in the inventory
+     inventory_item = PrintingInventory.objects.filter(paper_type=paper_type).first()
+
+     if inventory_item:
+          # If the item already exists, update the rim and onHand
+          inventory_item.onHand += additional_onHand
+          inventory_item.rim = inventory_item.onHand // 500  # Update rim based on new onHand
+          inventory_item.save()
+          return inventory_item
+     else:
+          # If the paper type doesn't exist, create a new inventory item
+          validated_data['onHand'] = additional_onHand
+          validated_data['rim'] = rim  # Set the initial rim value
+          printing_inventory = PrintingInventory.objects.create(paper_type=paper_type, **validated_data)
+          return printing_inventory
+
 
         
 
@@ -522,6 +532,11 @@ class DisplayStudentFormSerializer(serializers.ModelSerializer):
 # BOOK BIND SERIALIZER 
 ##################################################################################################
 
+class TypeBookBindSerializer(serializers.ModelSerializer):
+     class Meta:
+          model = BookBindType
+          fields = "__all__"
+
 class BookBindRequestTypeSerializer(serializers.ModelSerializer):
      class Meta:
           model = BookBindRequestType
@@ -588,6 +603,11 @@ class DisplayBookBindStudentRequestSerializer(serializers.ModelSerializer):
 ##################################################################################################
 # LAMINATION SERIALIZER 
 ##################################################################################################
+
+class TypeLaminationSerializer(serializers.ModelSerializer):
+     class Meta:
+          model = LaminationType
+          fields = "__all__"
 
 class LaminationTypeSerializer(serializers.ModelSerializer):
      class Meta:
