@@ -5,6 +5,7 @@ import Button from '../components/Button.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import Swal from 'sweetalert2'
 
 const NewPassword = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -25,7 +26,11 @@ const NewPassword = () => {
         });
 
         if (resetpassword.status === 200) {
-          alert('Password reset successful!');
+          Swal.fire({
+            title: "Success!",
+            text: "Password Reset Successfully!",
+            icon: "success"
+          });
           navigate('/donechangepassword');
         } else {
           alert('Something went wrong, please try again.');

@@ -39,32 +39,6 @@ export const PersonnelForm = () => {
   };
 
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (printDetails.printing_type === "1" || bookBindDetails.printing_type === "1" || laminationDetails.printing_type === "1"){
-      if (!data.pdf) newErrors.pdf = "File upload is required.";
-    }
-    else{
-      if (!data.page_count) newErrors.page_count = "Page count is required.";
-    }
-
-    if (selectedServiceType == "1" && !printDetails.quantity) {
-      newErrors.quantity = "Quantity is required for printing requests.";
-    }
-  
-    if (selectedServiceType == "2" && !bookBindDetails.quantity) {
-      newErrors.quantity = "Quantity is required for book binding requests.";
-    }
-  
-    if (selectedServiceType == "3" && !laminationDetails.quantity) {
-      newErrors.quantity = "Quantity is required for lamination requests.";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-
   
   // Function to fetch data for dropdowns
   const fetchDropdownData = async (url, setter) => {
@@ -469,6 +443,60 @@ export const PersonnelForm = () => {
     formData.append("pdf", file);
     
   }
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (selectedServiceType == "1" && !printDetails.quantity) {
+      newErrors.quantity = "Quantity is required for printing requests.";
+    }
+  
+    if (selectedServiceType == "2" && !bookBindDetails.quantity) {
+      newErrors.quantity = "Quantity is required for book binding requests.";
+    }
+  
+    if (selectedServiceType == "3" && !laminationDetails.quantity) {
+      newErrors.quantity = "Quantity is required for lamination requests.";
+    }
+    
+    if (selectedServiceType == "1") {
+      // Printing request validation
+      if (printDetails.printing_type == "1") {
+        if (!data.pdf) {
+          newErrors.pdf = "File upload is required for printing.";
+        }
+      } else {
+        if (!data.page_count) {
+          newErrors.page_count = "Page count is required for printing.";
+        }
+      }
+    } else if (selectedServiceType == "2") {
+      // Book binding request validation
+      if (bookBindDetails.book_bind_type == "1") {
+        if (!data.pdf) {
+          newErrors.pdf = "File upload is required for book binding.";
+        }
+      } else {
+        if (!data.page_count) {
+          newErrors.page_count = "Page count is required for book binding.";
+        }
+      }
+    } else if (selectedServiceType == "3") {
+      // Lamination request validation
+      if (laminationDetails.lamination_type == "1") {
+        if (!data.pdf) {
+          newErrors.pdf = "File upload is required for lamination.";
+        }
+      } else {
+        if (!data.page_count) {
+          newErrors.page_count = "Page count is required for lamination.";
+        }
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   
   return (
     <form className="printing-request-form " onSubmit={submitRequest}>
@@ -513,16 +541,16 @@ export const PersonnelForm = () => {
             </select>
             </div>
             </div>
-            <div>
+            {selectedServiceType === "1" ? (<div>
                 <p>Remarks:</p>
                 <textarea className="border-black border-1 rounded-[5px]" rows={2} cols={25} onChange={(e) => setData({
                     ...data, remarks: e.target.value,
                 })}/>
-            </div>
+            </div>) : (
+              null
+            )}
           </div>
           
-          
-
           <div className="printing-request-form-content-inputs-right items-center">
             <div className="w-full max-w-[100%]">
                 <p>Service Type</p>

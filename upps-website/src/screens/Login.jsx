@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios'
 import { useDispatch, useSelector } from "react-redux";
 import { login,post } from "../features/user"
+import Swal from 'sweetalert2'
 
 const Login = () => {
   const navigate = useNavigate();
@@ -51,7 +52,12 @@ const Login = () => {
       if (response.data.data) {
         const userData = response.data.data;
         dispatch(login(userData));
-        alert("Login successful!");
+        Swal.fire({
+          title: "Success!",
+          text: "Login Successfully!",
+          icon: "success"
+        });
+        
 
         const redirectTo = location.state?.from || "/";
 

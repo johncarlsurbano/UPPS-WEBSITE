@@ -239,8 +239,6 @@
           console.log("UNDEFINED SERVICE TYPE! ")
         }
 
-       
-        
       } catch(e){   
         console.error("Error Delete queue requests:", e);
       }

@@ -111,7 +111,7 @@ export const PersonnelDashboard = ({userRole}) => {
   const handleRemoveClick = (id) => {
     setQueueRequests((prev) => prev.filter((request) => request.id !== id));
     setQueueReadytoClaimRequest((prev) => prev.filter((request) => request.id !== id));
-};
+  };
 
   const proceedBill = async (queueRequest,requesttype) => {
     try{
@@ -180,16 +180,53 @@ export const PersonnelDashboard = ({userRole}) => {
   //   }
   //   console.log(queueRequest)
   // }
-  const removeQueue = async (id) => {
+  const removeQueue = async (id,servicettype) => {
     try{
-      const response = await axios.delete(`http://127.0.0.1:8000/api/deleterequest/${id}/`)
-      const data = response.data
+      if(servicettype === "Printing"){
+        const response = await axios.delete(`http://127.0.0.1:8000/api/deletestudent/request/${id}/`)
+        const data = response.data
 
-      fetchQueueRequests()
-      console.log(data)
-    } catch(e){
+        fetchQueueRequests();
+        console.log(data)
+        Swal.fire({
+          title: "Success!",
+          text: "Request Completed!",
+          icon: "success"
+        });
+      }
+      else if (servicettype === "Book Binding"){
+        const response = await axios.delete(`http://127.0.0.1:8000/api/deletepersonnel/request/bookbind/${id}/`)
+        const data = response.data
+
+        fetchBookBind();
+        console.log(data)
+        Swal.fire({
+          title: "Success!",
+          text: "Request Completed!",
+          icon: "success"
+        });
+      }
+      else if (servicettype === 'Lamination'){
+        const response = await axios.delete(`http://127.0.0.1:8000/api/deletepersonnel/request/lamination/${id}/`)
+        const data = response.data
+
+        fetchLamination();
+        console.log(data)
+        Swal.fire({
+          title: "Success!",
+          text: "Request Completed!",
+          icon: "success"
+        });
+      }
+      else {
+        console.log("UNDEFINED SERVICE TYPE! ")
+      }
+
+    } catch(e){   
       console.error("Error Delete queue requests:", e);
     }
+    console.log(id)
+    console.log(servicettype)
   }
 
 
@@ -318,6 +355,7 @@ export const PersonnelDashboard = ({userRole}) => {
         selectColor: selectInitialColor,
         handleBookBindDetailsClick,
         isTextStatus: user.role !== "Office Head",
+        removeQueue
           }
         )
       )

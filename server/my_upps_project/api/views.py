@@ -108,7 +108,8 @@ class SendRegistrationCodeView(APIView):
 class ResetPasswordView(APIView):
     def post(self, request):
         email = request.data.get('email')
-        new_password = request.data.get('new_password')
+        new_password = request.data.get('password')
+        
 
         try:
             user = User.objects.get(email=email)
@@ -996,9 +997,15 @@ class UpdateBookBindStudentQueueView(generics.RetrieveUpdateAPIView):
         # Return the updated instance data
         return Response(DisplayBookBindStudentQueueSerializer(instance).data)
     
+class DeletePersonnelBookBindReadyToClaimView(generics.DestroyAPIView):
+    queryset = BookBindQueue.objects.all()
+    serializer_class = DisplayBookBindPersonnelQueueSerializer
+    
 class DeleteStudentBookBindReadyToClaimView(generics.DestroyAPIView):
     queryset = BookBindStudentQueue.objects.all()
     serializer_class = DisplayBookBindStudentQueueSerializer
+
+
 
 
 ##################################################################################################
@@ -1299,10 +1306,15 @@ class LaminationUpdateStudentRequestView(generics.RetrieveUpdateAPIView):
 
         # Return the updated instance data
         return Response(DisplayLaminationPersonnelQueueSerializer(instance).data)
+    
+class DeletePersonnelLaminationReadyToClaimView(generics.DestroyAPIView):
+    queryset = LaminationPersonnelQueue.objects.all()
+    serializer_class = DisplayLaminationPersonnelQueueSerializer
 
 class DeleteStudentLaminationReadyToClaimView(generics.DestroyAPIView):
     queryset = LaminationStudentQueue.objects.all()
     serializer_class = DisplayLaminationStudentQueueSerializer
+
 
 
 

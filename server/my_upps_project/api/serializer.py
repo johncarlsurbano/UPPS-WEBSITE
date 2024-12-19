@@ -1232,12 +1232,22 @@ class PaymentSlipSerializer(serializers.ModelSerializer):
             total_pages = page_count * quantity
             return round(total_pages * unitcost, 2)
         elif obj.book_bind_request:  # Book-binding context
-            page_count = obj.book_bind_request.page_count or 0
-            return round(page_count * unitcost, 2)
+            book_binding_request_details = obj.book_bind_request.book_binding_request_details
+            price = book_binding_request_details.request_type.price
+            page_count = obj.book_bind_request.page_count
+            quantity = book_binding_request_details.quantity
+            total_pages = page_count * quantity
+            
+            return price + total_pages * unitcost
         
         elif obj.lamination_request:
-             page_count = obj.lamination_request.page_count or 0
-             return round(page_count * unitcost, 2)
+             lamination_request_details = obj.lamination_request.lamination_request_details
+             price = lamination_request_details.request_type.price
+             page_count = obj.lamination_request.page_count
+             quantity = lamination_request_details.quantity
+             total_pages = page_count * quantity
+
+             return price + total_pages * unitcost
         return 0  # Default in case no context is provided
 
     def update(self, instance, validated_data):
@@ -1330,11 +1340,21 @@ class DisplayPaymentSlipSerializer(serializers.ModelSerializer):
             total_pages = page_count * quantity
             return round(total_pages * unitcost, 2)
         elif obj.book_bind_request:  # Book-binding context
+            book_binding_request_details = obj.book_bind_request.book_binding_request_details
+            price = book_binding_request_details.request_type.price
             page_count = obj.book_bind_request.page_count
-            return round(page_count * unitcost, 2)
+            quantity = book_binding_request_details.quantity
+            total_pages = page_count * quantity
+            
+            return price + total_pages * unitcost
         elif obj.lamination_request:
-             page_count = obj.lamination_request.page_count or 0
-             return round(page_count * unitcost, 2)
+             lamination_request_details = obj.lamination_request.lamination_request_details
+             price = lamination_request_details.request_type.price
+             page_count = obj.lamination_request.page_count
+             quantity = lamination_request_details.quantity
+             total_pages = page_count * quantity
+
+             return price + total_pages * unitcost
         
         return 0  # Default in case no context is provided
 

@@ -66,8 +66,7 @@ export const BookBindQueue = ({
             <Button
                 onClick={() => {
                     proceedBookBindBill(requestDetail.book_bind_personnel_request.id)
-                    removeQueue(requestDetail.id)
-
+                    removeQueue(requestDetail.id, requestDetail.book_bind_personnel_request.service_type.service_type_name)
                 }}
                 style="py-[0.4rem] px-[1.5rem] bg-[#2A8400] text-white cursor-pointer rounded"
                 title={"Complete"}

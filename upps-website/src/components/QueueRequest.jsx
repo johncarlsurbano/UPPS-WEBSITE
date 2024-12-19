@@ -80,7 +80,7 @@ export const QueueRequest = ({
                     //     proceedJobOrder(queueDetail.personnel_print_request.id);
                     // }
                     proceedBill(queueDetail.personnel_print_request.id, printRequestDetails.request_type.request_type_name);
-                    removeQueue(queueDetail.id)
+                    removeQueue(queueDetail.id, queueDetail.personnel_print_request.service_type.service_type_name);
                 }}
                 style="py-[0.4rem] px-[1.5rem] bg-[#2A8400] text-white cursor-pointer rounded"
                 title={"Complete"}

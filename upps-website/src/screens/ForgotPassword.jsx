@@ -7,6 +7,7 @@ import axios from "axios"
 import { useState } from 'react'
 import { useDispatch } from 'react-redux';
 import { generateRegistrationCode, setEmail } from '../features/user.jsx';
+import Swal from 'sweetalert2'
 
 
 
@@ -28,14 +29,23 @@ const ForgotPassword = () => {
         })
 
         if (generatecode.status === 200) {
-          alert("Code has sent to your email!");
+
+          Swal.fire({
+            title: "Code Sent",
+            text: "Code has sent to your email!",
+            icon: "info"
+          });
           dispatch(generateRegistrationCode(generatecode.data.code)); // Save the code in Redux
           navigate("/changepasswordcode");
         }
 
       }
       else {
-        alert("Email does not exist!")
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Email does not exist!",
+        });
         return;
       }
 

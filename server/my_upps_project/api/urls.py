@@ -77,6 +77,7 @@ urlpatterns = [
     path('getpersonnel/queue/bookbind', GetBookBindPersonnelQueueView.as_view(), name="getbookbindqueue"),
 
     path('personnel/updatequeue/bookbind/<int:pk>/', BookBindUpdateRequestView.as_view(), name="updatequeuebookbind"),
+    path('deletepersonnel/request/bookbind/<int:pk>/', DeletePersonnelBookBindReadyToClaimView().as_view(), name="deletebookbindqueue"),
 
 
    ##### STUDENT
@@ -102,6 +103,9 @@ urlpatterns = [
     path('personnel/queue/lamination', CreateLaminationPersonnelQueueView.as_view(), name="laminationqueue"),
     path('getpersonnel/queue/lamination', GetLaminationPersonnelQueueView.as_view(), name="getpersonnelqueue"),
     path('personnel/updatequeue/lamination/<int:pk>/', LaminationUpdateRequestView.as_view(), name="updatelaminationqueue"),
+    path('deletepersonnel/request/lamination/<int:pk>/', DeletePersonnelLaminationReadyToClaimView().as_view(), name="deletelaminationpersonnelqueue"),
+    
+
     
 
     ##### STUDENT
@@ -111,6 +115,7 @@ urlpatterns = [
     path ('getstudent/queue/lamination', GetLaminationStudentQueueView.as_view(), name="getstudentqueue"),
     path('student/updatequeue/lamination/<int:pk>/', LaminationUpdateStudentRequestView.as_view(), name="updatelaminationqueue"),
     path('deletestudent/request/lamination/<int:pk>/', DeleteStudentLaminationReadyToClaimView().as_view(), name="deletelaminationqueue"),
+
 
 
 
