@@ -4,7 +4,8 @@ import Button from '../components/Button.jsx';
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { InventoryDetails } from "../components/InventoryDetails.jsx";
-import { InventoryAddItem } from "../components/InventoryAddItem.jsx";
+import { InventoryAddItem2} from "../components/InventoryAddItem2.jsx";
+import { InventoryAddItem } from "./InventoryAddInventory.jsx";
 import { FilterRequest } from "../components/FilterRequest.jsx";
 
 export const InventoryTable = () => {
@@ -13,6 +14,7 @@ export const InventoryTable = () => {
   const [newPaperType, setNewPaperType] = useState("");
   const [editItemId, setEditItemId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [addItemModalOpen, setAddItemModalOpen] = useState(false);
   const [status, setStatus] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [filteredItem, setFilteredItem] = useState([]);
@@ -90,7 +92,11 @@ export const InventoryTable = () => {
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen); // Toggle modal visibility
+    
   };
+  const toggleAddItemModal = () => {
+    setAddItemModalOpen(!addItemModalOpen)
+  }
 
   useEffect(() => {
     
@@ -136,7 +142,7 @@ export const InventoryTable = () => {
     "Item Name",
     "Item ID",
     "Category",
-    "Rim",
+    "Ream",
     "Price",
     "Updated",
     "Status",
@@ -177,13 +183,22 @@ export const InventoryTable = () => {
               style={'mb-2'}
             />
           </div>
+          <div className="flex gap-[1rem]">
           <Button
-            title={"Add Item"}
+            title={"Add Inventory"}
             style={
               "bg-[#6fb84c] text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white"
             }
             onClick={toggleModal}
           ></Button>
+          <Button
+            title={"Add Item"}
+            style={
+              "bg-blue-500 text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white"
+            }
+            onClick={toggleAddItemModal}
+          ></Button>
+          </div>
         </div>
 
         <GenericTable
@@ -195,6 +210,12 @@ export const InventoryTable = () => {
       {isModalOpen && (
         <div className="modal-overlay fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <InventoryAddItem onClose={toggleModal} />
+        </div>
+      )}
+
+      {addItemModalOpen && (
+        <div className="modal-overlay fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <InventoryAddItem2 onClose={toggleAddItemModal} />
         </div>
       )}
     </div>

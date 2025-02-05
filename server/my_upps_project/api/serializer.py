@@ -410,6 +410,44 @@ class AddItemPrintingSerializer(serializers.ModelSerializer):
           validated_data['rim'] = rim  # Set the initial rim value
           printing_inventory = PrintingInventory.objects.create(paper_type=paper_type, **validated_data)
           return printing_inventory
+     
+class AddReamPrintingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrintingInventory
+        fields = ['paper_type', 'rim']
+
+    def to_internal_value(self, data):
+        # Remove onHand from the incoming data, as it is calculated dynamically
+        if 'onHand' in data:
+            data.pop('onHand')
+        return super().to_internal_value(data)
+
+    def create(self, validated_data):
+        # Extract the paper_type instance and rim value
+        paper_type_data = validated_data.pop('paper_type')
+        paper_type, created = PaperType.objects.get_or_create(**paper_type_data)
+
+        rim = validated_data.get('rim', 0)
+        additional_onHand = rim * 500  # 1 ream = 500 onHand
+
+        # Find the existing inventory item for the paper type
+        inventory_item = PrintingInventory.objects.filter(paper_type=paper_type).first()
+
+        if inventory_item:
+            # Update the onHand and rim values
+            inventory_item.onHand += additional_onHand
+            inventory_item.rim = inventory_item.onHand // 500
+            inventory_item.save()
+            return inventory_item
+        else:
+            # If no inventory exists for this paper type, create one
+            return PrintingInventory.objects.create(
+                paper_type=paper_type,
+                rim=rim,
+                onHand=additional_onHand,
+            )
+
+
 
 
         

@@ -278,11 +278,11 @@ class UpdateStudentQueueStatusView(generics.RetrieveUpdateAPIView):
                 student_request = instance.student_print_request
                 user = student_request.request  # Get the related user
                 email = user.email  # Get the user's email address
+                duplex_value = "Yes" if student_request.request.print_request_details.duplex else "No"
 
                 # Construct the email message
                 subject = "Your Print Request is Ready to Claim"
-                message = f"""
-                        Dear {student_request.request.first_name} {student_request.request.last_name},
+                message = f"""Dear {student_request.request.first_name} {student_request.request.last_name},
 
                         We are pleased to inform you that your print request is now ready to claim. You can proceed to the printing office to collect your document.
 
@@ -293,7 +293,7 @@ class UpdateStudentQueueStatusView(generics.RetrieveUpdateAPIView):
                         - Request Type: {student_request.request.print_request_details.printing_type.printing_type_name}
                         - Paper Size: {student_request.request.print_request_details.paper_type.paper_type}
                         - Quantity: {student_request.request.print_request_details.quantity}
-                        - Back to Back: {student_request.request.print_request_details.duplex}
+                        - Back to Back: {duplex_value}
 
                         Thank you for using our printing service.
 
@@ -486,28 +486,28 @@ class UpdateQueueView(generics.RetrieveUpdateAPIView):
                 personnel_request = instance.personnel_print_request
                 user = personnel_request.user  # Get the related user
                 email = user.email  # Get the user's email address
+                duplex_value = "Yes" if personnel_request.print_request_details.duplex else "No"
 
                 # Construct the email message
                 subject = "Your Print Request is Ready to Claim"
-                message =  f"""
-                        Dear {user.first_name} {user.last_name},
+                message = f"""Dear {user.first_name} {user.last_name},
 
-                        We are pleased to inform you that your print request is now ready to claim. You can proceed to the printing office to collect your document.
+                            We are pleased to inform you that your print request is now ready to claim. You can proceed to the printing office to collect your document.
 
-                        Here are the details of your request:
+                            Here are the details of your request:
 
-                        - Customer Name: {user.first_name} {user.last_name}
-                        - Department: {user.department.department_name}
-                        - Request Type: {personnel_request.print_request_details.printing_type.printing_type_name}
-                        - Paper Size: {personnel_request.print_request_details.paper_type.paper_type}
-                        - Quantity: {personnel_request.print_request_details.quantity}
-                        - Back to Back: {personnel_request.print_request_details.duplex}
+                            - Customer Name: {user.first_name} {user.last_name}
+                            - Department: {user.department.department_name}
+                            - Request Type: {personnel_request.print_request_details.printing_type.printing_type_name}
+                            - Paper Size: {personnel_request.print_request_details.paper_type.paper_type}
+                            - Quantity: {personnel_request.print_request_details.quantity}
+                            - Back to Back: {duplex_value}
 
-                        Thank you for using our printing service.
+                            Thank you for using our printing service.
 
-                        Best regards,
-                        The University Printing Press System
-                        """
+                            Best regards,  
+                            The University Printing Press System
+                            """
                 from_email = "universityprintingpresssystem@gmail.com"
 
                 # Send the email
@@ -645,6 +645,10 @@ class BillView(generics.ListCreateAPIView):
 class PrintingInventoryView(generics.ListCreateAPIView):
     queryset = PrintingInventory.objects.all()
     serializer_class = DisplayPrintInventorySerializer
+
+class InventoryAddReamView(generics.ListCreateAPIView):
+    queryset = PrintingInventory.objects.all()
+    serializer_class = AddItemPrintingSerializer
 
 class UpdatePrintingInventoryView(generics.RetrieveUpdateAPIView):
     queryset = PrintingInventory.objects.all()

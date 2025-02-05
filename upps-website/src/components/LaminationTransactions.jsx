@@ -291,12 +291,12 @@ export const LaminationTransactions = () => {
                 handleSelectChange={setSelectedRequestType}
               />
             </div>
-            <Button
+            {/* <Button
               title={"Remove"}
               style={
                 "bg-[#f04714] text-white text-center py-[1rem] px-[2rem] self-end rounded-[5px]"
               }
-            ></Button>
+            ></Button> */}
           </div>
 
           <GenericTable
@@ -323,12 +323,12 @@ export const LaminationTransactions = () => {
             <h1 className="mb-10 text-[clamp(1.5rem,3vw,2rem)] font-bold text-navy">
               Payment Slip
             </h1>
-            <Button
+            {/* <Button
               title={"Remove"}
               style={
                 "bg-[#f04714] text-white text-center py-[1rem] px-[2rem] self-end rounded-[5px]"
               }
-            ></Button>
+            ></Button> */}
           </div>
           <GenericTable
             headers={printingTransactionHeaderPaymentSlip}

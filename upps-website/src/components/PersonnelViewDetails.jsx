@@ -35,7 +35,7 @@ export const PersonnelViewDetails = ({ request, onClose, handleAccept, handleRej
             personnelEmail={request?.user.email || 'N/A'}
             departmentName={request?.user.department?.department_name || 'N/A'}
           />
-          <div className="personnel-request-details w-full max-w-[100%]">
+          <div className="personnel-request-details w-full max-w-[100%">
             <p className="text-[clamp(1rem,3vw,1.7rem)]">Request Details</p>
             <ChairmanPersonnelRequestDetails
               requestType={printDetails?.request_type?.request_type_name || 'N/A'}

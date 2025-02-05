@@ -5,6 +5,7 @@ import Button from "../components/Button.jsx";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from 'axios'
+import Swal from "sweetalert2"
 
 const RegistrationCode = () => {
   const navigate = useNavigate();
@@ -28,15 +29,27 @@ const RegistrationCode = () => {
     if (enteredCode === registrationCode.toString()) {
        try{
           const response = await axios.post("http://127.0.0.1:8000/api/createuser/", formData)
-          alert("Code is Correct, Registration Complete");
+          Swal.fire({
+            title: "Sucess!",
+            text: "Registration Complete",
+            icon: "info"
+          });
           navigate("/doneregister");
           console.log(response.data)
         }catch(e){
           console.error("Failed to register user:", e);
-          alert("Failed to register user. Please try again.");
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Failed to register user. Please try again.",
+          });
         }
     } else {
-      alert("Incorrect Code, Please Try Again!");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Incorrect Code, Please Try Again!",
+      });
    
     }
   };

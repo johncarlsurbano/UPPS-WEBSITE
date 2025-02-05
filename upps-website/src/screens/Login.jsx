@@ -86,7 +86,11 @@ const Login = () => {
       }
   
     } catch (e){
-      alert(e.response?.data?.message[0] || "Login failed.");
+      Swal.fire({
+        title: "Login Failed!",
+        text: e.response?.data?.message[0],
+        icon: "error"
+      });
     }
    
 

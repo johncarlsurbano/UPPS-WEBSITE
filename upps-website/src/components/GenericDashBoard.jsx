@@ -3,6 +3,7 @@ import DashboardCounterBox from "./DashboardCounterBox";
 import Button from "./Button";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux"
+import Swal from 'sweetalert2'
 
 export const GenericDashBoard = ({
   dashboardHeader,
@@ -22,16 +23,28 @@ export const GenericDashBoard = ({
   const requestAccess = (navigateTo) => {
 
     if (!user) {
-      alert("User information is missing. Please log in again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "User information is missing. Please log in again.",
+      });
       return;
     }
 
     if (user.account_status === "Pending") {
-      alert("Your account is pending. Please wait for approval by the chairman!");
+      Swal.fire({
+        title: "Pending",
+        text: "Your account is pending. Please wait for approval by the chairman!",
+        icon: "info"
+      });
       return;
     }
     if (user.account_status === "Denied") {
-      alert("Your account is denied. Please contact the chairman!");
+      Swal.fire({
+        icon: "error",
+        title: "Denied",
+        text: "Your account is denied. Please contact the chairman!",
+      });
       return;
     }
     if (user.account_status === "Active") {
@@ -49,7 +62,7 @@ export const GenericDashBoard = ({
           {dashboardTitle}
         </h1>
         <div className="flex items-end justify-between w-full max-w-[100%] mt-10">
-          <div className="flex flex-col w-full max-w-[20rem] gap-3">
+          <div className="add-request-button flex flex-col w-full max-w-[20rem] gap-3">
             <h1 className="text-[clamp(1.5rem,3vw,2.5rem)] text-navy">
               Submit Request
             </h1>
@@ -61,7 +74,7 @@ export const GenericDashBoard = ({
               />
             </div>
           </div>
-          <div className="flex flex-col w-full max-w-[50rem] gap-[2rem]">
+          <div className="counter-box flex flex-col w-full max-w-[50rem] gap-[2rem]">
             <div className="flex justify-between w-full max-w-[100%]">
               <DashboardCounterBox
                 title={"Pending Request"}
@@ -114,7 +127,7 @@ export const GenericDashBoard = ({
         />
       </div>
       <div>
-        <h1 className="text-[clamp(1.5rem,3vw,2.5rem)] text-navy font-bold">
+        <h1 className="ready-to-claim-title-header text-[clamp(1.5rem,3vw,2.5rem)] text-navy font-bold">
           {readyToClaimTitle}
         </h1>
         <GenericTable

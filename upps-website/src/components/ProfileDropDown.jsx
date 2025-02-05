@@ -11,6 +11,7 @@ import userProfileImage from "../assets/tutin.png";
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/user";
+import Swal from 'sweetalert2'
 
 
 
@@ -53,7 +54,11 @@ function ProfileDropDown() {
   const handleLogout = () => {
     dispatch(logout());
     navigate('/landingpage')
-    alert("You have logged out.");
+    Swal.fire({
+      title: "Success!",
+      text: "Logout Successfully!",
+      icon: "success"
+    });
   };
 
   function handleListKeyDown(event) {

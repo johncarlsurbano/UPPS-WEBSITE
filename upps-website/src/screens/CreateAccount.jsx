@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { post, generateRegistrationCode, login } from "../features/user.jsx";
 import axios from "axios"
+import Swal from "sweetalert2"
 
 
 export const CreateAccount = () => {
@@ -99,7 +100,11 @@ export const CreateAccount = () => {
       const emailCheckResponse = await axios.post('http://127.0.0.1:8000/api/validateemail/', { email: formData.email });
 
       if (emailCheckResponse.data.exists) {
-        alert("Email Already Exists!");
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Email Already Exists!.",
+        });
         return;
       }
     } catch (error) {
@@ -109,17 +114,30 @@ export const CreateAccount = () => {
     }
 
     if (formData.password !== formData.confirmpassword) {
-      alert("Passwords do not match");
+
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Passwords do not match",
+      });
       return;
     }
 
     if (!passregex.test(formData.password)) {
-      alert("Password does not meet criteria");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Password does not meet criteria",
+      });
       return;
     }
 
     if (!emailregex.test(formData.email)) {
-      alert("Invalid email address");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Invalid email address",
+      });
       return;
     }
 
@@ -141,13 +159,21 @@ export const CreateAccount = () => {
       });
     
       if (codeResponse.status === 200) {
-        alert("Registration code sent to your email!");
+        Swal.fire({
+          title: "Code Sent",
+          text: "Registration Code has sent to your email!",
+          icon: "info"
+        });
         dispatch(generateRegistrationCode(codeResponse.data.code)); // Save the code in Redux
         navigate("/registrationcode");
       }
     } catch (error) {
       console.error("Error sending code:", error);
-      alert("Failed to send the registration code. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to send the registration code. Please try again.",
+      });
       return;
     }
 

@@ -3,7 +3,7 @@ import Button from "../components/Button";
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { InventoryDetails } from '../components/InventoryDetails.jsx';
-import { InventoryAddItem } from '../components/InventoryAddItem.jsx';
+import { InventoryAddItem } from '../components/InventoryAddInventory.jsx';
 import { FilterRequest } from "../components/FilterRequest.jsx";
 
 export const PrintingInventory = () => {

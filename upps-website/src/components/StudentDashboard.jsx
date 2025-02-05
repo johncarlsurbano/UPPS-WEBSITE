@@ -134,7 +134,11 @@
     
         const data = response.data;
 
-        alert("Updated Payment")
+        Swal.fire({
+          title: "Success!",
+          text: "Updated Payment",
+          icon: "success"
+        });
         
 
         setStudentRequest((prev) =>
@@ -602,14 +606,13 @@
         />
       );
     };
-    return (
-      
+    return ( 
       <div className="student-dashboard flex flex-col">
         <div className="student-dashboard-content flex flex-col m-auto my-0 w-full max-w-[1200px]">
           <h1 className="text-center mt-[5rem] text-[clamp(1.5rem,3vw,2.5rem)] text-navy font-bold">
             Student Dashboard
           </h1>
-          <div className="flex justify-center gap-3 mt-20 w-full max-w-[100%]">
+          <div className="landing-dashboard-button-portal flex justify-center gap-3 mt-20 w-full max-w-[100%]">
             <Button
               title={"Printing"}
               style="text-white bg-yellow rounded-[100rem] w-full max-w-[15rem] py-[0.8rem] text-[clamp()] text-[clamp(1.2rem,3vw,1.2rem)] font-bold"

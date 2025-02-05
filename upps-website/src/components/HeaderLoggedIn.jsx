@@ -51,7 +51,7 @@ export const HeaderLoggedIn = ({href}) => {
             <img src={uppsLogo} alt="" />
             
           </div>
-          <div className="flex items-center gap-3 w-full max-w-[40rem] justify-end" >
+          <div className="header-links flex items-center gap-3 w-full max-w-[40rem] justify-end" >
             <a href="#" className="text-[clamp(1.2rem,3vw,1.2rem)] font-bold cursor-pointer" onClick={(e) => {
               e.preventDefault();
               homeNavigation(user?.role)

@@ -30,7 +30,7 @@ export const InventoryDetails = ({
     ),
     "Item ID": paperDetails ? paperDetails.id : "N/A",
     Category: "Paper",
-    "Rim": inventoryDetails?.rim || "N/A",
+    "Ream": inventoryDetails?.rim || "N/A",
     Price: paperDetails ? paperDetails.price : "N/A",
     Updated: formatDate || "N/A",
     Status: inventoryDetails?.status || "N/A",

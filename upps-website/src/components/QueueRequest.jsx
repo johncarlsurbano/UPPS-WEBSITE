@@ -47,7 +47,7 @@ export const QueueRequest = ({
         ) : (
             <select
                 value={queueDetail.queue_status}
-                style={{ color: color }}
+                style={{ color: 'black' }}
                 className="dashboard-table-options font-bold"
                 onChange={(e) => {
                     selectColor(e.target.value, queueDetail.id);

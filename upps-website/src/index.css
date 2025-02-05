@@ -343,3 +343,49 @@ body p {
   color: white;
   background-color: #17153a;
 }
+
+/* =========================RESPONSIVE GLOBAL CSS============================= */
+
+
+@media (max-width: 768px) {
+  .printing-request-form-content-inputs{
+      flex-direction: column;
+      justify-content: center;    
+      align-items: center;
+  }
+
+  .personnel-profile-page-content{
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .personnel-profile-page-content-left{
+    max-width: 60%;
+  }
+
+  .landing-dashboard-button-portal{
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .generic-table, .about-content{
+    padding: 0 2rem;
+  }
+
+  .counter-box, .header-links{
+    padding-right: 2rem;
+  }
+
+  .add-request-button, .ready-to-claim-title-header{
+    padding-left: 2rem;
+  }
+  
+}
+
+@media (max-width: 640px) {
+  .printing-request-form-content-inputs{
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+  }
+}

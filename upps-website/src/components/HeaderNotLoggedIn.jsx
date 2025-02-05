@@ -19,7 +19,7 @@ export const HeaderNotLoggedIn = ({href}) => {
           <div className="h-[3.5rem] w-full max-w-[15rem]">
             <img src={uppsLogo} alt="" />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="header-links flex items-center gap-3">
             <a
               href=""
               className="text-[clamp(1.2rem,3vw,1.2rem)] font-bold text-navy"

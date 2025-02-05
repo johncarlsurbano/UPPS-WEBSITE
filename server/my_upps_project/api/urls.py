@@ -52,6 +52,7 @@ urlpatterns = [
     path('updatepaidstatus/<int:pk>/', updatePaidStatusView.as_view(), name="updatepaidstatus"),
     path('signatories/', SignatoriesView.as_view(), name="signatories"),
     path('inventory/additem/', CreatePrintingInventoryView.as_view(), name="createprintinginventory"),
+    path('inventory/addream/', InventoryAddReamView.as_view(), name="inventoryaddream"),
     path('deleteinventory/<int:pk>/', DeletePrintingInventoryView.as_view(), name="deleteinventory"),
 
 

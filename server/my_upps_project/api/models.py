@@ -364,7 +364,7 @@ class LaminationStudentQueue(models.Model):
     
 class PrintingInventory(models.Model):
     paper_type = models.OneToOneField(PaperType, on_delete=models.CASCADE)
-    onHand = models.IntegerField()
+    onHand = models.IntegerField(null=True, blank=True)
     rim = models.IntegerField(blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=50, editable=False)
