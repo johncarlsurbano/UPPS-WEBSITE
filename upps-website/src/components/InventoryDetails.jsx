@@ -10,6 +10,7 @@ export const InventoryDetails = ({
   handleOnChangePaperType,
   cancelEdit,
   handleDelete,
+  generateStockCard,
 }) => {
   const paperDetails = inventoryDetails?.paper_type;
 
@@ -58,5 +59,13 @@ export const InventoryDetails = ({
         )}
       </div>
     ),
+    "Stock Card": (
+      <Button
+        title="Generate"
+        style="bg-[#6fb84c] text-white rounded-[5px] px-[1rem] py-[0.2rem]"
+        onClick={() => generateStockCard(inventoryDetails.id)}
+      />
+    ),
+
   };
 };

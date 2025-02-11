@@ -44,6 +44,7 @@ urlpatterns = [
     path('deleterequest/<int:pk>/', DeleteReadyToClaimView.as_view(), name="deleterequest"),
     path('displaypersonnelrequest/',DisplayPersonnelRequest.as_view(), name="displaypersonnelrequest"),
     path('displaypersonnelqueue/print/',DisplayPersonnelPrintQueueRequest.as_view(), name="displaypersonnelrequest"),
+    path('editpersonnelrequest/<int:pk>/',EditRequestView.as_view(), name="editpersonnelrequest"),
     path('uploadfile/', FileUploadView.as_view(), name="uploadfile"),
     path('uploadfile/<int:pk>/', FileRetrieveView.as_view(), name="fileretrieve"),
     path('printinginventory/',DisplayPrintInventoryView.as_view(), name="printinginventory"),
@@ -79,6 +80,7 @@ urlpatterns = [
 
     path('personnel/updatequeue/bookbind/<int:pk>/', BookBindUpdateRequestView.as_view(), name="updatequeuebookbind"),
     path('deletepersonnel/request/bookbind/<int:pk>/', DeletePersonnelBookBindReadyToClaimView().as_view(), name="deletebookbindqueue"),
+    path('editbookbind/request/<int:pk>/', EditBookBindRequestView.as_view(), name="editbookbindrequest"),
 
 
    ##### STUDENT
@@ -105,6 +107,7 @@ urlpatterns = [
     path('getpersonnel/queue/lamination', GetLaminationPersonnelQueueView.as_view(), name="getpersonnelqueue"),
     path('personnel/updatequeue/lamination/<int:pk>/', LaminationUpdateRequestView.as_view(), name="updatelaminationqueue"),
     path('deletepersonnel/request/lamination/<int:pk>/', DeletePersonnelLaminationReadyToClaimView().as_view(), name="deletelaminationpersonnelqueue"),
+    path('editlamination/request/<int:pk>/', EditLaminationRequestView.as_view(), name="editlaminationrequest"),
     
 
     
@@ -124,8 +127,26 @@ urlpatterns = [
     # path('personnelacceptedprintrequest/', PersonnelAcceptedPrintRequestView.as_view(), name="acceptedpersonnelrequest"),
     # path('personneldeclineprintrequest/',PersonnelDeclinedPrintRequestView.as_view(), name="declinedpersonnelrequest")
 
-        
-]
+
+    #### INVENTORY
+    path('inventory-items/', InventoryItemListCreateView.as_view(), name='inventory-items-list'),
+    path('inventory-items/<int:pk>/', InventoryItemDetailView.as_view(), name='inventory-items-detail'),
+
+    path('raw-materials/', RawMaterialsInventoryListCreateView.as_view(), name='raw-materials-list'),
+    path('raw-materials/<int:pk>/', RawMaterialsInventoryDetailView.as_view(), name='raw-materials-detail'),
+
+    path('work-in-process/', WorkInProcessInventoryListCreateView.as_view(), name='work-in-process-list'),
+    path('work-in-process/<int:pk>/', WorkInProcessInventoryDetailView.as_view(), name='work-in-process-detail'),
+
+    path('transfer-raw-to-wip/', TransferRawToWIPView.as_view(), name='transfer-raw-to-wip'),
+ 
+    path("deduct-inventory/", DeductInventoryFIFOView.as_view(), name="deduct-inventory"),
+
+    path("stockcard/", StockCardView.as_view(), name="stockcard"),
+     path("stockcard/<int:inventory_id>/", StockCardByInventoryView.as_view(), name="stock-cards-by-inventory"),
+
+]   
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

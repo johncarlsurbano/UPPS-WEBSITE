@@ -628,6 +628,10 @@ class DisplayPendingRequestView(generics.ListAPIView):
             return PersonnelPrintRequest.objects.filter(request_status=status)
         else:
             return PersonnelPrintRequest.objects.none()
+        
+class EditRequestView(generics.UpdateAPIView):
+    queryset = QueueDetails.objects.all()
+    serializer_class = EditRequestSerializer
 
 
 class BillView(generics.ListCreateAPIView):
@@ -650,7 +654,7 @@ class InventoryAddReamView(generics.ListCreateAPIView):
     queryset = PrintingInventory.objects.all()
     serializer_class = AddItemPrintingSerializer
 
-class UpdatePrintingInventoryView(generics.RetrieveUpdateAPIView):
+class   UpdatePrintingInventoryView(generics.RetrieveUpdateAPIView):
     queryset = PrintingInventory.objects.all()
     serializer_class = UpdatePrintingInventorySerializer
 
@@ -1009,6 +1013,9 @@ class DeleteStudentBookBindReadyToClaimView(generics.DestroyAPIView):
     queryset = BookBindStudentQueue.objects.all()
     serializer_class = DisplayBookBindStudentQueueSerializer
 
+class EditBookBindRequestView(generics.UpdateAPIView):
+    queryset = BookBindQueue.objects.all()
+    serializer_class = EditBookBindRequestSerializer
 
 
 
@@ -1106,6 +1113,10 @@ class CreateLaminationPersonnelQueueView(generics.ListCreateAPIView):
 class GetLaminationPersonnelQueueView(generics.ListAPIView):
     queryset = LaminationPersonnelQueue.objects.all()
     serializer_class = DisplayLaminationPersonnelQueueSerializer
+
+class EditLaminationRequestView(generics.UpdateAPIView):
+    queryset = LaminationPersonnelQueue.objects.all()  
+    serializer_class = EditLaminationSerializer 
 
 class LaminationUpdateRequestView(generics.RetrieveUpdateAPIView):
     queryset = LaminationPersonnelQueue.objects.all()
@@ -1350,4 +1361,106 @@ class BookBindingQueueView(APIView):
         )
         serializer = BookBindStudentQueueSerializer(book_binding_queue, many=True)
         return Response(serializer.data)
+    
 
+### INVENTORY VIEWS ###
+
+class InventoryItemListCreateView(generics.ListCreateAPIView):
+    queryset = InventoryItem.objects.all()
+    serializer_class = InventoryItemSerializer
+
+class InventoryItemDetailView(generics.RetrieveUpdateAPIView):
+    queryset = InventoryItem.objects.all()
+    serializer_class = InventoryItemSerializer
+
+# Raw Materials Inventory CRUD Views
+class RawMaterialsInventoryListCreateView(generics.ListCreateAPIView):
+    queryset = RawMaterialsInventory.objects.all()
+    serializer_class = RawMaterialsInventorySerializer
+
+class RawMaterialsInventoryDetailView(generics.RetrieveUpdateAPIView):
+    queryset = RawMaterialsInventory.objects.all()
+    serializer_class = RawMaterialsInventorySerializer
+
+# Work In Process Inventory CRUD Views
+class WorkInProcessInventoryListCreateView(generics.ListCreateAPIView):
+    queryset = WorkInProcessInventory.objects.all()
+    serializer_class = WorkInProcessInventorySerializer
+
+class WorkInProcessInventoryDetailView(generics.RetrieveUpdateAPIView):
+    queryset = WorkInProcessInventory.objects.all()
+    serializer_class = WorkInProcessInventorySerializer
+
+# Transfer Stock from Raw Materials to Work In Process
+class TransferRawToWIPView(APIView):
+    """Transfers stock from Raw Materials to Work In Process"""
+
+    def post(self, request, *args, **kwargs):
+        raw_material_id = request.data.get("raw_material_id")
+        quantity = int(request.data.get("quantity", 0))
+
+        try:
+            raw_material = RawMaterialsInventory.objects.get(id=raw_material_id)
+            wip_inventory, created = WorkInProcessInventory.objects.get_or_create(inventory_item=raw_material.inventory_item)
+
+            if raw_material.deduct_stock(quantity):
+                wip_inventory.add_stock(quantity)
+                return Response({"message": "Stock transferred successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Not enough stock"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        except RawMaterialsInventory.DoesNotExist:
+            return Response({"error": "Raw material not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class DeductInventoryFIFOView(APIView):
+    """Deducts inventory using FIFO when fulfilling a print request"""
+
+    def post(self, request, *args, **kwargs):
+        paper_type = request.data.get("paper_type")
+        quantity_needed = int(request.data.get("quantity", 0))
+
+        if not paper_type or quantity_needed <= 0:
+            return Response({"error": "Invalid paper type or quantity"}, status=status.HTTP_400_BAD_REQUEST)
+
+        inventory = InventoryItem.objects.filter(
+            paper_type__paper_type=paper_type,
+            category="Paper",
+            onhand_per_count__gt=0
+        ).order_by("created_at")  # FIFO ordering
+
+        total_deducted = 0
+        for item in inventory:
+            if total_deducted >= quantity_needed:
+                break  # Stop once the request is fulfilled
+
+            if item.onhand_per_count >= (quantity_needed - total_deducted):
+                item.onhand_per_count -= (quantity_needed - total_deducted)
+                total_deducted = quantity_needed
+            else:
+                total_deducted += item.onhand_per_count
+                item.onhand_per_count = 0  # Deplete stock
+
+            item.save()
+
+        if total_deducted < quantity_needed:
+            return Response({"error": "Not enough stock available"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"message": f"Successfully deducted {quantity_needed} reams in FIFO order"}, status=status.HTTP_200_OK)
+
+
+class StockCardView(generics.ListCreateAPIView):
+    queryset = StockCard.objects.all().order_by("-issued")  # Show latest first
+    serializer_class = StockCardSerializer
+
+    def perform_create(self, serializer):
+        """Automatically handle stock card transactions."""
+        serializer.save()
+
+
+class StockCardByInventoryView(generics.ListAPIView):
+    serializer_class = StockCardSerializer
+
+    def get_queryset(self):
+        """Filter stock cards by printing_inventory ID"""
+        inventory_id = self.kwargs["inventory_id"]
+        return StockCard.objects.filter(printing_inventory_id=inventory_id).order_by("-issued")

@@ -49,6 +49,9 @@ import { TransactionPage } from './screens/TransactionPage.jsx'
 import { OfficeHeadProfilePage } from './screens/OfficeHeadProfilePage.jsx'
 import { StudentForm  } from './screens/StudentForm.jsx'
 import { PersonnelForm } from './screens/PersonnelForm.jsx'
+import { RawMaterialsInventory } from './components/RawMaterialsInventory.jsx'
+import { StockCard } from './screens/StockCard.jsx'
+
  
 
  function App() {
@@ -58,9 +61,10 @@ import { PersonnelForm } from './screens/PersonnelForm.jsx'
     <>
       <BrowserRouter>
         <Routes>
+          
 
-
-          <Route path="/" element={<Navigate to={"/landingpage"} replace/>} />
+          <Route path="/" element={<Navigate to={"/stockcard"} replace/>} />
+          <Route path="/stockcard" element={<StockCard />} />
           
           <Route path="/create-account" element={<CreateAccount />} />
           <Route path="/registrationcode" element={<RegistrationCode />} /> 
@@ -123,7 +127,9 @@ import { PersonnelForm } from './screens/PersonnelForm.jsx'
               <Route path='transactionbill' element={<TransactionPage />} />
               <Route path="profilepage" element={<OfficeHeadProfilePage/>} />
               <Route path="inventory" element={<InventoryPage/>} />
-              
+              <Route path="stockcard" element={<StockCard />} />
+              {/*  */}
+
           </Route>
               <Route path="/officehead/billingform" element={<BillingForm/>} />
               <Route path="/officehead/joborderform" element={<JobOrderForm/>} />

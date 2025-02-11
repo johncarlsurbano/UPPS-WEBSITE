@@ -13,7 +13,8 @@ export const LaminationQueue = ({
     removeMode,
     handleShowModal,  // Add handleShowModal as a prop
     proceedLaminationBill,
-    removeQueue
+    removeQueue,
+    user
 }) => {
     
     const laminationRequest = requestDetail?.lamination_personnel_request;
@@ -50,28 +51,29 @@ export const LaminationQueue = ({
                 <option value="Ready to Claim" style={{ color: "#2A8400" }} className="font-bold">Ready To Claim</option>
             </select>
         ),
-        Details: (  
-            <a
-                id="details-button"
-                onClick={() => handleLaminationDetailsClick(requestDetail)}
-                className="text-blue-600 cursor-pointer"
-                style={{ fontSize: "1rem", textAlign: "center" }}
-            >
-                Details
-            </a>
-        ),
-        Action: (
-            <Button
-                onClick={() => {
-                    proceedLaminationBill(requestDetail.lamination_personnel_request.id)
-                    removeQueue(requestDetail.id, requestDetail.lamination_personnel_request.service_type.service_type_name)
-
-                }}
-                style="py-[0.4rem] px-[1.5rem] bg-[#2A8400] text-white cursor-pointer rounded"
-                title={"Complete"}
-                
-            >
-            </Button>
-        )
+        ...(user.id === personnelRequest?.id || user.role === "Office Head") && {
+            Details: (  
+                <a
+                    id="details-button"
+                    onClick={() => handleLaminationDetailsClick(requestDetail)}
+                    className="text-blue-600 cursor-pointer"
+                    style={{ fontSize: "1rem", textAlign: "center" }}
+                >
+                    Details
+                </a>
+            ),
+            Action: (
+                <Button
+                    onClick={() => {
+                        proceedLaminationBill(requestDetail.lamination_personnel_request.id)
+                        removeQueue(requestDetail.id, requestDetail.lamination_personnel_request.service_type.service_type_name)
+                    }}
+                    style="py-[0.4rem] px-[1.5rem] bg-[#2A8400] text-white cursor-pointer rounded"
+                    title={"Complete"}
+                    
+                >
+                </Button>
+            )
+        },
     }
 }

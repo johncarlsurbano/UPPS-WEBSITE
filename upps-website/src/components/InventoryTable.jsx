@@ -43,7 +43,8 @@ export const InventoryTable = () => {
           handleSave,
           handleOnChangePaperType,
           cancelEdit,
-          handleDelete
+          handleDelete,
+          generateStockCard
         })
       );
 
@@ -88,6 +89,10 @@ export const InventoryTable = () => {
     setIsEditing(false);
     setEditItemId(null);
     setNewPaperType("");
+  };
+
+  const generateStockCard = (itemId) => {
+    window.open(`/stockcard?id=${itemId}`, "_blank");
   };
 
   const toggleModal = () => {
@@ -147,6 +152,7 @@ export const InventoryTable = () => {
     "Updated",
     "Status",
     "Action",
+    "Stock Card"
   ];
 
   return (

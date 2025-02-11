@@ -78,6 +78,20 @@ export const OfficeHeadProfilePage = () => {
                     }
                     onClick={() => navigate('/officehead/transactionbill/')}
                   />
+                  {/* <Button
+                    title={"Manage WIP Inventory"}
+                    style={
+                      "bg-yellow text-white w-full max-w-[25rem] py-[1rem] font-bold text-[clamp(1.2rem,3vw,1.2rem)] rounded-[10px]"
+                    }
+                    onClick={() => navigate('/officehead/inventory/')}
+                  />
+                  <Button
+                    title={"Manage  RM Inventory"}
+                    style={
+                      "bg-yellow text-white w-full max-w-[25rem] py-[1rem] font-bold text-[clamp(1.2rem,3vw,1.2rem)] rounded-[10px]"
+                    }
+                    onClick={() => navigate('/officehead/inventory/RMIInventory')}
+                  /> */}
                   <Button
                     title={"Manage Inventory"}
                     style={

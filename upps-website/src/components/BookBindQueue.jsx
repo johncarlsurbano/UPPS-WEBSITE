@@ -2,7 +2,7 @@ import React from 'react'
 import Button from './Button'
 
 export const BookBindQueue = ({
-    
+
     requestDetail,
     selectColor,
     optionColor,
@@ -13,7 +13,8 @@ export const BookBindQueue = ({
     removeMode,
     handleShowModal,  // Add handleShowModal as a prop
     proceedBookBindBill,
-    removeQueue
+    removeQueue,
+    user
 }) => {
     
 
@@ -52,27 +53,31 @@ export const BookBindQueue = ({
                 <option value="Ready to Claim" style={{ color: "#2A8400" }} className="font-bold">Ready To Claim</option>
             </select>
         ),
-        Details: (  
-            <a
-                id="details-button"
-                onClick={() => handleBookBindDetailsClick(requestDetail)}
-                className="text-blue-600 cursor-pointer"
-                style={{ fontSize: "1rem", textAlign: "center" }}
-            >
-                Details
-            </a>
-        ),
-        Action: (
-            <Button
-                onClick={() => {
-                    proceedBookBindBill(requestDetail.book_bind_personnel_request.id)
-                    removeQueue(requestDetail.id, requestDetail.book_bind_personnel_request.service_type.service_type_name)
-                }}
-                style="py-[0.4rem] px-[1.5rem] bg-[#2A8400] text-white cursor-pointer rounded"
-                title={"Complete"}
-                
-            >
-            </Button>
-        )
+        ...(user.id === personnelRequest?.id || user.role === "Office Head") && {
+            Details: (  
+                <a
+                    id="details-button"
+                    onClick={() => handleBookBindDetailsClick(requestDetail)}
+                    className="text-blue-600 cursor-pointer"
+                    style={{ fontSize: "1rem", textAlign: "center" }}
+                >
+                    Details
+                </a>
+            ),
+            Action: (
+                <Button
+                    onClick={() => {
+                        proceedBookBindBill(requestDetail.book_bind_personnel_request.id)
+                        removeQueue(requestDetail.id, requestDetail.book_bind_personnel_request.service_type.service_type_name)
+                    }}
+                    style="py-[0.4rem] px-[1.5rem] bg-[#2A8400] text-white cursor-pointer rounded"
+                    title={"Complete"}
+                    
+                >
+                </Button>
+            )
+        },
+        
+        
     }
 }

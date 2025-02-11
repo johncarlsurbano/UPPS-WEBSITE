@@ -2,6 +2,7 @@ from django.db import models
 from django import forms
 from PyPDF2 import PdfReader
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 
 
 # Create your models here.
@@ -21,11 +22,22 @@ class PaperType(models.Model):
         null=True,
         blank=True
     )
-    
 
     def __str__(self):
         return self.paper_type
+
+class InkType(models.Model):
+    ink_type_name = models.CharField(max_length=100)
+    price = models.DecimalField(
+        max_digits=10,  # Total number of digits allowed (including decimal places)
+        decimal_places=2,  # Number of decimal places
+        null=True,
+        blank=True
+    )
+    def __str__(self):
+        return self.ink_type_name
     
+
 class PrintingType(models.Model):
     printing_type_name = models.CharField(max_length=100)
 
@@ -196,6 +208,7 @@ class BookBindQueue(models.Model):
     request_date = models.DateField(auto_now_add=True)
 
 
+
 class BookBindingStudentRequest(models.Model):
     service_type = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100)
@@ -362,26 +375,151 @@ class LaminationStudentQueue(models.Model):
 ################# STUDENT QUEUE ########################
 
     
+
+
+class InventoryItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('Ink', 'Ink'),
+        ('Paper', 'Paper'),
+        ('Toner', 'Toner'),
+        ('Battery', 'Battery'),
+        ('Office Storage', 'Office Storage & Organization'),
+        ('Binding', 'Binding'),
+        ('Laminating', 'Laminating'),
+        ('ID Card', 'ID Card'),
+    ]
+
+    name = models.CharField(max_length=255)  # Brand name (e.g., Apple, Orange)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    paper_type = models.ForeignKey(PaperType, on_delete=models.CASCADE, null=True, blank=True)
+    stock_number = models.IntegerField(null=True, blank=True)
+    unit = models.CharField(max_length=100)
+    unit_value = models.DecimalField(max_digits=10, decimal_places=2)
+    balance_per_card = models.IntegerField()
+    total_value = models.DecimalField(max_digits=15, decimal_places=2, editable=False)
+    onhand_per_count = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.paper_type}) - {self.onhand_per_count} reams"
+
+    def save(self, *args, **kwargs):
+        # Automatically calculate total_value
+        self.total_value = self.balance_per_card * self.unit_value
+
+        # Ensure paper category logic
+        if self.category == 'Paper' and self.paper_type:
+            existing_inventory = InventoryItem.objects.filter(
+                paper_type=self.paper_type, name=self.name
+            ).order_by("created_at")
+
+            if existing_inventory.exists():
+                # Ensure a new entry is created instead of merging stock
+                super().save(*args, **kwargs)
+                return
+
+        super().save(*args, **kwargs)
+
 class PrintingInventory(models.Model):
-    paper_type = models.OneToOneField(PaperType, on_delete=models.CASCADE)
-    onHand = models.IntegerField(null=True, blank=True)
-    rim = models.IntegerField(blank=True, null=True)
+    paper_type = models.OneToOneField("PaperType", on_delete=models.CASCADE)
+    onHand = models.IntegerField(null=True, blank=True)  # Stores sheets
+    rim = models.IntegerField(blank=True, null=True)  # Stores reams (1 ream = 500 sheets)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=50, editable=False)
 
+    SHEETS_PER_REAM = 500  # Define sheets per ream
+
     def save(self, *args, **kwargs):
-        # Calculate the rim value based on the onHand value
-        self.rim = self.onHand // 500  # Integer division to calculate full rims
+        """Automatically log stock changes in StockCard when rim value changes."""
+        try:
+            previous = PrintingInventory.objects.get(pk=self.pk)
+            previous_rim = previous.rim or 0
+        except PrintingInventory.DoesNotExist:
+            previous_rim = None  # First-time entry
 
-        # Ensure correct status before saving
+        # Convert sheets to reams before saving
+        new_rim = self.onHand // self.SHEETS_PER_REAM if self.onHand else 0
+        self.rim = new_rim
+
+        # Detect changes in rim (reams)
+        if previous_rim is not None and new_rim != previous_rim:
+            quantity_change = abs(new_rim - previous_rim)
+            if new_rim > previous_rim:
+                receiver = "Supply"
+                quantity_received = quantity_change  # Add in reams
+                quantity_issued = 0
+            else:
+                receiver = "Roy M."
+                quantity_received = 0
+                quantity_issued = quantity_change  # Deduct in reams
+
+            # Create a StockCard entry
+            StockCard.objects.create(
+                printing_inventory=self,
+                receiver=receiver,
+                quantity_received=quantity_received,  # In reams
+                quantity_issued=quantity_issued,  # In reams
+                quantity_on_hand=new_rim,  # In reams
+                remarks="Stock updated automatically"
+            )
+
+        # Update stock status based on `onHand`
         if self.onHand == 0:
-            self.status = 'Out-of-Stock'
-        elif self.onHand <= 500:
-            self.status = 'Low-Stock'
+            self.status = "Out-of-Stock"
+        elif self.onHand <= self.SHEETS_PER_REAM:
+            self.status = "Low-Stock"
         else:
-            self.status = 'In-Stock'
+            self.status = "In-Stock"
 
-        super().save(*args, **kwargs)  # Call the parent save method
+        super().save(*args, **kwargs)
+
+
+class RawMaterialsInventory(models.Model):
+    inventory_item = models.OneToOneField(InventoryItem, on_delete=models.CASCADE)
+    stock_quantity = models.IntegerField(default=0)  # Stock stored here
+
+    def __str__(self):
+        return f"{self.inventory_item.name} - Raw Stock: {self.stock_quantity}"
+
+    def deduct_stock(self, quantity):
+        """Deduct stock when transferring to Work In Process"""
+        if self.stock_quantity >= quantity:
+            self.stock_quantity -= quantity
+            self.save()
+            return True
+        return False  # Not enough stock
+
+    def add_stock(self, quantity):
+        """Increase stock when new stock arrives"""
+        self.stock_quantity += quantity
+        self.save()
+
+
+class WorkInProcessInventory(models.Model):
+    inventory_item = models.OneToOneField(InventoryItem, on_delete=models.CASCADE)
+    stock_quantity = models.IntegerField(default=0)  # Stock stored here
+
+    def __str__(self):
+        return f"{self.inventory_item.name} - Work In Process Stock: {self.stock_quantity}"
+
+    def add_stock(self, quantity):
+        """Increase stock when receiving from Raw Materials"""
+        self.stock_quantity += quantity
+        self.save()
+
+
+
+class StockCard(models.Model):
+    printing_inventory = models.ForeignKey("PrintingInventory", on_delete=models.CASCADE)
+    issued = models.DateField(auto_now_add=True)
+    requisition = models.CharField(max_length=50, null=True, blank=True)
+    receiver = models.CharField(max_length=100,null=True, blank=True)
+    quantity_received = models.IntegerField(null=True, blank=True, default=0)
+    quantity_issued = models.IntegerField(null=True, blank=True, default=0)
+    quantity_on_hand = models.IntegerField(null=True,blank=True)
+    remarks = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.printing_inventory.paper_type} - {self.issued}"
 
 
 

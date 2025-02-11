@@ -173,6 +173,50 @@ class QueueSerializer(serializers.ModelSerializer):
           fields= "__all__"
 
 
+class EditRequestSerializer(serializers.ModelSerializer):
+    quantity = serializers.IntegerField(source='personnel_print_request.print_request_details.quantity', required=False)
+    paper_type = serializers.PrimaryKeyRelatedField(
+        queryset=PaperType.objects.all(),
+        source='personnel_print_request.print_request_details.paper_type',
+        required=False
+    )
+    pdf = serializers.FileField(source='personnel_print_request.pdf', required=False)
+
+    class Meta:
+        model = QueueDetails
+        fields = ['quantity', 'paper_type', 'pdf']  # Only these fields are editable
+
+    def update(self, instance, validated_data):
+        personnel_print_request = instance.personnel_print_request
+        print_request_details = personnel_print_request.print_request_details
+
+        # Update quantity if provided
+        if 'personnel_print_request' in validated_data:
+            personnel_data = validated_data['personnel_print_request']
+            
+            # Update PrintRequestDetails fields if present
+            if 'print_request_details' in personnel_data:
+                print_details_data = personnel_data['print_request_details']
+                
+                if 'quantity' in print_details_data:
+                    print_request_details.quantity = print_details_data['quantity']
+                
+                if 'paper_type' in print_details_data:
+                    print_request_details.paper_type = print_details_data['paper_type']
+
+            # Update PDF file if provided
+            if 'pdf' in personnel_data:
+                personnel_print_request.pdf = personnel_data['pdf']
+
+        # Save updates
+        print_request_details.save()
+        personnel_print_request.save()
+
+        return instance
+
+
+
+
 #==========================================================================
 
 class PrintRequestSerializer(serializers.ModelSerializer):
@@ -633,6 +677,47 @@ class DisplayBookBindStudentRequestSerializer(serializers.ModelSerializer):
           model = BookBindingStudentRequest
           fields = "__all__"
 
+class EditBookBindRequestSerializer(serializers.ModelSerializer):
+    quantity = serializers.IntegerField(source='book_bind_personnel_request.book_binding_request_details.quantity', required=False)
+    paper_type = serializers.PrimaryKeyRelatedField(
+        queryset=PaperType.objects.all(),
+        source='book_bind_personnel_request.book_binding_request_details.paper_type',
+        required=False
+    )
+    pdf = serializers.FileField(source='book_bind_personnel_request.pdf', required=False)
+
+    class Meta:
+        model = BookBindQueue
+        fields = ['quantity', 'paper_type', 'pdf']  # Only these fields are editable
+
+    def update(self, instance, validated_data):
+        book_bind_personnel_request = instance.book_bind_personnel_request
+        book_binding_request_details = book_bind_personnel_request.book_binding_request_details
+
+        # Update quantity and paper type if provided
+        if 'book_bind_personnel_request' in validated_data:
+            personnel_data = validated_data['book_bind_personnel_request']
+            
+            # Update BookBindingRequestDetails fields if present
+            if 'book_binding_request_details' in personnel_data:
+                book_details_data = personnel_data['book_binding_request_details']
+                
+                if 'quantity' in book_details_data:
+                    book_binding_request_details.quantity = book_details_data['quantity']
+                
+                if 'paper_type' in book_details_data:
+                    book_binding_request_details.paper_type = book_details_data['paper_type']
+
+            # Update PDF file if provided
+            if 'pdf' in personnel_data:
+                book_bind_personnel_request.pdf = personnel_data['pdf']
+
+        # Save updates
+        book_binding_request_details.save()
+        book_bind_personnel_request.save()
+
+        return instance
+
 
 
 
@@ -705,6 +790,47 @@ class DisplayLaminationStudentRequestSerializer(serializers.ModelSerializer):
           model = LaminationStudentRequest
           fields = "__all__"
 
+
+class EditLaminationSerializer(serializers.ModelSerializer):
+    quantity = serializers.IntegerField(source='lamination_personnel_request.lamination_request_details.quantity', required=False)
+    paper_type = serializers.PrimaryKeyRelatedField(
+        queryset=PaperType.objects.all(),
+        source='lamination_personnel_request.lamination_request_details.paper_type',
+        required=False
+    )
+    pdf = serializers.FileField(source='lamination_personnel_request.pdf', required=False)
+
+    class Meta:
+        model = BookBindQueue
+        fields = ['quantity', 'paper_type', 'pdf']  # Only these fields are editable
+
+    def update(self, instance, validated_data):
+        lamination_personnel_request = instance.lamination_personnel_request
+        lamination_request_details = lamination_personnel_request.lamination_request_details
+
+        # Update quantity and paper type if provided
+        if 'lamination_personnel_request' in validated_data:
+            personnel_data = validated_data['lamination_personnel_request']
+            
+            # Update BookBindingRequestDetails fields if present
+            if 'lamination_request_details' in personnel_data:
+                lamination_details_data = personnel_data['lamination_request_details']
+                
+                if 'quantity' in lamination_details_data:
+                    lamination_request_details.quantity = lamination_details_data['quantity']
+                
+                if 'paper_type' in lamination_details_data:
+                    lamination_request_details.paper_type = lamination_details_data['paper_type']
+
+            # Update PDF file if provided
+            if 'pdf' in personnel_data:
+                lamination_personnel_request.pdf = personnel_data['pdf']
+
+        # Save updates
+        lamination_request_details.save()
+        lamination_personnel_request.save()
+
+        return instance
 
 
 
@@ -1484,3 +1610,81 @@ class DisplayLaminationStudentQueueSerializer(serializers.ModelSerializer):
      class Meta:
           model = LaminationStudentQueue
           fields = "__all__"
+
+
+
+
+## INVENTORY SERIALIZER ##
+
+class InventoryItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'id', 'name', 'category', 'paper_type', 'stock_number', 
+            'unit', 'unit_value', 'balance_per_card', 'total_value', 'onhand_per_count'
+        ]
+
+class RawMaterialsInventorySerializer(serializers.ModelSerializer):
+    inventory_item_name = serializers.CharField(source='inventory_item.name', read_only=True)
+    inventory_item_details = InventoryItemSerializer(source='inventory_item', read_only=True)
+
+    class Meta:
+        model = RawMaterialsInventory
+        fields = ['id', 'inventory_item', 'inventory_item_name', 'inventory_item_details', 'stock_quantity']
+
+class WorkInProcessInventorySerializer(serializers.ModelSerializer):
+    inventory_item_name = serializers.CharField(source='inventory_item.name', read_only=True)
+    inventory_item_details = InventoryItemSerializer(source='inventory_item', read_only=True)
+
+    class Meta:
+        model = WorkInProcessInventory
+        fields = ['id', 'inventory_item', 'inventory_item_name', 'inventory_item_details', 'stock_quantity']
+
+
+class StockCardSerializer(serializers.ModelSerializer):
+    printing_inventory = DisplayPrintInventorySerializer(read_only=True)
+    class Meta:
+        model = StockCard
+        fields = "__all__"
+
+    def create(self, validated_data):
+        """Handles stock transactions and ensures stock card values are in reams."""
+        printing_inventory = validated_data["printing_inventory"]
+        quantity_issued_sheets = validated_data.get("quantity_issued", 0) or 0
+        quantity_received_sheets = validated_data.get("quantity_received", 0) or 0
+        remarks = validated_data.get("remarks", "")
+
+        SHEETS_PER_REAM = 500  # Adjust based on your standard
+
+        # ✅ Convert all values from sheets to reams
+        quantity_issued = quantity_issued_sheets / SHEETS_PER_REAM
+        quantity_received = quantity_received_sheets / SHEETS_PER_REAM
+
+        # ✅ Get the last stock card entry (stored in reams)
+        last_stock = StockCard.objects.filter(printing_inventory=printing_inventory).order_by('-issued').first()
+
+        if last_stock:
+            prev_on_hand_reams = last_stock.quantity_on_hand  # Already in reams
+            new_quantity_on_hand = prev_on_hand_reams - quantity_issued + quantity_received
+        else:
+            # ✅ First stock entry (convert `onHand` sheets to reams)
+            new_quantity_on_hand = (printing_inventory.onHand / SHEETS_PER_REAM) if printing_inventory.onHand else 0
+            quantity_issued = 0
+            quantity_received = 0
+            remarks = "Initial stock entry"
+
+        # ✅ Set receiver
+        receiver = "Roy M." if quantity_issued else "Supply" if quantity_received else None
+
+        # ✅ Create stock card entry with values in reams
+        stock_card = StockCard.objects.create(
+            printing_inventory=printing_inventory,
+            issued=validated_data.get("issued"),
+            receiver=receiver,
+            quantity_issued=round(quantity_issued, 2),  # Stored in reams
+            quantity_received=round(quantity_received, 2),
+            quantity_on_hand=round(new_quantity_on_hand, 2),
+            remarks=remarks,
+        )
+
+        return stock_card

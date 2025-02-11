@@ -1,19 +1,113 @@
-import React from 'react';
-import {useSelector } from 'react-redux'
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import Swal from 'sweetalert2'
+
 export const RequestDetailsModal = ({ requestData, onClose }) => {
   const personnelRequest = requestData.personnel_print_request.user;
   const printRequestDetails = requestData ? requestData.personnel_print_request.print_request_details : null;
 
+  const [paperType, setPaperType] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [updatedQuantity, setUpdatedQuantity] = useState(printRequestDetails?.quantity || '');
+  const [updatedPaperSize, setUpdatedPaperSize] = useState(printRequestDetails?.paper_type?.id || ''); // Store ID
+  const [updatedFile, setUpdatedFile] = useState(null);
+
   const user = useSelector((state) => state.user.value.user);
+  const fetchPaperType = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/api/papertype/");
+      setPaperType(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPaperType();
+  }, []);
+
+  const handleEdit = () => setIsEditing(true);
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setUpdatedQuantity(printRequestDetails?.quantity || '');
+    setUpdatedPaperSize(printRequestDetails?.paper_type?.id || '');
+    setUpdatedFile(null);
+  };
+
+  const handleSave = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('quantity', updatedQuantity);
+      formData.append('paper_type', updatedPaperSize); // Send paper_type ID
+      if (updatedFile) {
+        formData.append('pdf', updatedFile); // Changed key from 'file' to 'pdf'
+      }
+
+
+      await axios.put(
+        `http://127.0.0.1:8000/api/editpersonnelrequest/${requestData.id}/`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' }, // Required for file upload
+        }
+      );
+
+      requestData.personnel_print_request.print_request_details.quantity = updatedQuantity;
+      requestData.personnel_print_request.print_request_details.paper_type = paperType.find((type) => type.id === Number(updatedPaperSize));
+
+      if (updatedFile) {
+        requestData.personnel_print_request.pdf = URL.createObjectURL(updatedFile);
+      }
+  
+
+      Swal.fire({
+                title: "Success!",
+                text: "Updated",
+                icon: "success"
+              });
+      setIsEditing(false);
+      fetchPaperType()
+      
+    } catch (error) {
+      console.error("Error updating request:", error);
+    }
+
+    
+  };
+
+  const handleFileChange = (e) => {
+    setUpdatedFile(e.target.files[0]);
+  };
+
+  const deleteRequest = () => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        try {
+          axios.delete(`http://127.0.0.1:8000/api/deleterequest/${requestData.id}/`);
+          onClose();
+        } catch (error) {
+          console.error("Error deleting request:", error);
+        }
+      }
+    });
+  }
+
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
       <div className="bg-[#ffffff] p-8 rounded-xl w-11/12 max-w-lg relative shadow-2xl border border-gray-700">
         <div className='flex justify-between items-center'>
           <h2 className="text-2xl font-bold text-[#17153a]">Request Details</h2>
-          <button
-            className="text-2xl text-[#17153a] hover:text-red-500 focus:outline-none"
-            onClick={onClose}
-          >
+          <button className="text-2xl text-[#17153a] hover:text-red-500 focus:outline-none" onClick={onClose}>
             &times;
           </button>
         </div>
@@ -26,69 +120,122 @@ export const RequestDetailsModal = ({ requestData, onClose }) => {
             <p className='text-base'>{personnelRequest ? `${personnelRequest.first_name} ${personnelRequest.last_name}` : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Email</h1>
+            <h1 className='text-xl'>Email</h1>
             <p className='text-base'>{personnelRequest ? personnelRequest.email : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Department</h1>
+            <h1 className='text-xl'>Department</h1>
             <p className='text-base'>{personnelRequest ? personnelRequest.department.department_name : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Position</h1>
+            <h1 className='text-xl'>Position</h1>
             <p className='text-base'>{personnelRequest ? personnelRequest.position.position_name : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Type</h1>
-            <p className='text-base'>{printRequestDetails? printRequestDetails.printing_type.printing_type_name : 'N/A'}</p>
+            <h1 className='text-xl'>Type</h1>
+            <p className='text-base'>{printRequestDetails ? printRequestDetails.printing_type.printing_type_name : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Request-Type</h1>
+            <h1 className='text-xl'>Request-Type</h1>
             <p className='text-base'>{printRequestDetails ? printRequestDetails.request_type.request_type_name : 'N/A'}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Paper Size</h1>
-            <p className='text-base'>{printRequestDetails ? printRequestDetails.paper_type.paper_type : 'N/A'}</p>
+            <h1 className='text-xl'>Paper Size</h1>
+            {isEditing ? (
+              <select
+                value={updatedPaperSize}
+                onChange={(e) => setUpdatedPaperSize(e.target.value)}
+                className="border p-2 rounded w-full"
+              >
+                {paperType.map((type) => (
+                  <option key={type.id} value={type.id}> {/* Store ID */}
+                    {type.paper_type}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className='text-base'>{printRequestDetails?.paper_type?.paper_type || 'N/A'}</p>
+            )}
           </div>
           <div>
-          <h1 className='text-xl'>Quantity</h1>
-            <p className='text-base'>{printRequestDetails ? printRequestDetails.quantity : 'N/A'}</p>
+            <h1 className='text-xl'>Quantity</h1>
+            {isEditing ? (
+              <input
+                type="number"
+                value={updatedQuantity}
+                onChange={(e) => setUpdatedQuantity(e.target.value)}
+                className="border p-2 rounded w-full"
+              />
+            ) : (
+              <p className='text-base'>{updatedQuantity}</p>
+            )}
           </div>
           <div>
-          <h1 className='text-xl'>Queue Status</h1>
+            <h1 className='text-xl'>Queue Status</h1>
             <p className='text-base'>{requestData.queue_status}</p>
           </div>
           <div>
-          <h1 className='text-xl'>Request Date</h1>
+            <h1 className='text-xl'>Request Date</h1>
             <p className='text-base'>{requestData.request_date}</p>
           </div>
-          
-          {user.id === personnelRequest.id || user.role === "Office Head" ? ( 
-              <div>
-                <h1 className='text-xl'>File</h1>
-                  <button onClick={() => window.open(requestData.personnel_print_request.pdf, "_blank")} href={requestData.personnel_print_request && requestData.personnel_print_request.pdf ? requestData.personnel_print_request.pdf : "#"} className="text-[#4d70f1] text-[1.1rem]   ">
-                    {requestData.personnel_print_request && requestData.personnel_print_request.pdf ? "View File" : "N/A"}
-                  </button>
-              </div>
-          ): (
+          {user.id === personnelRequest.id || user.role === "Office Head" ? (
+            <div> 
+            <h1 className='text-xl'>File</h1>
+            {isEditing ? (
+              <input type="file" onChange={handleFileChange} className="border p-2 rounded w-full" />
+            ) : (
+              <button
+                onClick={() => window.open(requestData.personnel_print_request.pdf, "_blank")}
+                className="text-[#4d70f1] text-[1.1rem]"
+              >
+                {requestData.personnel_print_request.pdf ? "View File" : "N/A"}
+              </button>
+            )}
+          </div>
+          ) : (
             <div>
               <h1 className='text-xl'>File</h1>
               <p className="text-base">N/A</p> 
             </div>
           )}
-
+          
           <div>
             <h1 className='text-xl'>Remarks</h1>
             <p className='text-base'>{requestData.personnel_print_request.remarks}</p>
           </div>
-          
         </div>
-
-        <button
-          className="w-full mt-6 py-3 text-[#ffffff] bg-[#17153a] font-bold rounded-lg hover:bg-[#dca10f] transition-all duration-200 transform hover:scale-[1.05]"
-          onClick={onClose}
-        >
-          Close
-        </button>
+        {(user.id === personnelRequest.id || user.role === "Office Head") && requestData.queue_status !== "Ready to Claim" ? (
+          <div className='flex gap-2'>
+          {isEditing ? (
+            <>
+              <button className="w-full mt-6 py-3 text-[#ffffff] bg-red-600 font-bold rounded-lg hover:bg-red-500" onClick={handleCancel}>
+                Cancel
+              </button>
+              <button className="w-full mt-6 py-3 text-[#ffffff] bg-green font-bold rounded-lg hover:bg-[#0BDA51]" onClick={handleSave}>
+                Save
+              </button>
+            </>
+          ) : (
+            <div className='flex w-full gap-2'> 
+              <button button className="w-full mt-6 py-3 text-[#ffffff] bg-red-600 font-bold rounded-lg hover:bg-red-500" onClick={deleteRequest}>
+                Delete
+              </button>
+              <button className="w-full mt-6 py-3 text-[#ffffff] bg-[#17153a] font-bold rounded-lg hover:bg-[#4e46db]" onClick={handleEdit}>
+                Edit
+              </button>
+            </div>
+          )}
+        </div>
+        ):(
+          <div className='flex gap-2'>
+            <button className="w-full mt-6 py-3 text-[#ffffff] bg-[#17153a] font-bold rounded-lg hover:bg-[#4e46db]" onClick={onClose} >
+              Close
+            </button>
+          </div>
+        )
+        
+        }
+        
       </div>
     </div>
   );

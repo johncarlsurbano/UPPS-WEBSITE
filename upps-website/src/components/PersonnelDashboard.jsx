@@ -27,11 +27,13 @@ export const PersonnelDashboard = ({userRole}) => {
   const [bookBindRequest, setBookBindRequest] = useState([])
   const [readyToClaimBBRequest, setReadyToClaimBBRequest] = useState([])
   const [selectedBookBindRequest, setSelectedBookBindRequest] = useState(null)
+  const [bbQueue, setBbQueue] = useState([])
   const [bbShowModal, setBBShowModal] = useState(false)
 
   // LAMINATION HOOKS
   const [laminationRequest, setLaminationRequest] = useState([])
   const [readyToClaimLamRequest, setReadyToClaimLamRequest] = useState([])
+  const [laminationQueue, setLaminationQueue] = useState([])
   const [selectedLaminationRequest, setSelectedLaminationRequest] = useState(null)
   const [lamShowModal, setLamShowModal] = useState(false)
   
@@ -39,6 +41,7 @@ export const PersonnelDashboard = ({userRole}) => {
 
   const user = useSelector((state) => state.user.value.user);
   const navigate = useNavigate()
+  
   
 
   const LoadingSpinner = () => (
@@ -83,6 +86,7 @@ export const PersonnelDashboard = ({userRole}) => {
     setLamShowModal(false)
   };
 
+
   const handleQueueStatus = async (id, newStatus) => {
     setLoading(true)
     try {
@@ -121,7 +125,6 @@ export const PersonnelDashboard = ({userRole}) => {
           "request": queueRequest
         })
         const data = response.data
-        console.log(data)
         Swal.fire({
           title: "Success!",
           text: "Request Completed!",
@@ -135,7 +138,7 @@ export const PersonnelDashboard = ({userRole}) => {
           }
         )
         const data = response.data
-        console.log(data)
+      
         Swal.fire({
           title: "Success!",
           text: "Request Completed!",
@@ -144,11 +147,6 @@ export const PersonnelDashboard = ({userRole}) => {
       }
       fetchQueueRequests()
       
-
-
-      // navigate("/officehead/transactionbill/")
-
-      // setBillRequest(data);
    
       
       
@@ -159,35 +157,14 @@ export const PersonnelDashboard = ({userRole}) => {
 
   }
 
-  // const proceedJobOrder = async (queueRequest) => {
-  //   try{
-  //     const response = await axios.post('http://127.0.0.1:8000/api/joborder/', {
-  //       "description": "BillingRequest",
-  //       "request": queueRequest
-  //     })
-      
-  //     const data = response.data
-
-  //     // navigate("/officehead/transactionbill/")
-
-  //     // setBillRequest(data);
-  //     console.log(data)
-
-      
-      
-  //   } catch(e){
-  //     console.error("Error proceeding bill:", e);
-  //   }
-  //   console.log(queueRequest)
-  // }
   const removeQueue = async (id,servicettype) => {
     try{
       if(servicettype === "Printing"){
-        const response = await axios.delete(`http://127.0.0.1:8000/api/deletestudent/request/${id}/`)
+        const response = await axios.delete(`http://127.0.0.1:8000/api/deleterequest/${id}/`)
         const data = response.data
 
         fetchQueueRequests();
-        console.log(data)
+        
         Swal.fire({
           title: "Success!",
           text: "Request Completed!",
@@ -199,7 +176,7 @@ export const PersonnelDashboard = ({userRole}) => {
         const data = response.data
 
         fetchBookBind();
-        console.log(data)
+        
         Swal.fire({
           title: "Success!",
           text: "Request Completed!",
@@ -211,7 +188,7 @@ export const PersonnelDashboard = ({userRole}) => {
         const data = response.data
 
         fetchLamination();
-        console.log(data)
+
         Swal.fire({
           title: "Success!",
           text: "Request Completed!",
@@ -225,8 +202,7 @@ export const PersonnelDashboard = ({userRole}) => {
     } catch(e){   
       console.error("Error Delete queue requests:", e);
     }
-    console.log(id)
-    console.log(servicettype)
+
   }
 
 
@@ -237,7 +213,7 @@ export const PersonnelDashboard = ({userRole}) => {
       const data = response.data
 
       setQueue(data)
-      console.log(data)
+  
       const filteredRequests = data.filter(
         (request) => request.queue_status === "Pending" || request.queue_status === "In Progress"
       );
@@ -251,7 +227,8 @@ export const PersonnelDashboard = ({userRole}) => {
         handleQueueStatus,
         selectColor: selectInitialColor,
         closeModal,
-        color: 'black'
+        color: 'black',
+        user
       }))
 
       const mappedReadyToClaimData = filteredReadyToClaimRequests.map((queueDetail) => QueueRequest({
@@ -264,7 +241,8 @@ export const PersonnelDashboard = ({userRole}) => {
         // proceedJobOrder,
         closeModal,
         handleRemoveClick,
-        removeQueue
+        removeQueue,
+        user
       }))
 
       setQueueRequests(mappedData)
@@ -299,7 +277,7 @@ export const PersonnelDashboard = ({userRole}) => {
 
       const data = response.data
 
-      console.log(data)
+  
       
       Swal.fire({
         title: "Success!",
@@ -340,8 +318,8 @@ export const PersonnelDashboard = ({userRole}) => {
       const response = await axios.get("http://127.0.0.1:8000/api/getpersonnel/queue/bookbind");
       const data = response.data
     
-      console.log(data)
-      // console.log(data)
+
+      setBbQueue(data)
       const filteredRequests = data.filter(
         (request) => request.queue_status === "Pending" || request.queue_status === "In Progress"
       );
@@ -355,7 +333,8 @@ export const PersonnelDashboard = ({userRole}) => {
         selectColor: selectInitialColor,
         handleBookBindDetailsClick,
         isTextStatus: user.role !== "Office Head",
-        removeQueue
+        removeQueue,
+        user
           }
         )
       )
@@ -367,7 +346,8 @@ export const PersonnelDashboard = ({userRole}) => {
         handleBookBindDetailsClick,
         proceedBookBindBill,
         isTextStatus: user.role !== "Office Head",
-        removeQueue
+        removeQueue,
+        user
           }
         )
       )
@@ -406,8 +386,7 @@ export const PersonnelDashboard = ({userRole}) => {
       })
       const data = response.data
 
-      console.log(data)
-      
+
       Swal.fire({
         title: "Success!",
         text: "Request Completed!",
@@ -434,7 +413,7 @@ export const PersonnelDashboard = ({userRole}) => {
       );
 
       await fetchLamination();
-      console.log("Update Successfull")
+
     }catch (e) {
       console.error(e)
     }
@@ -444,6 +423,8 @@ export const PersonnelDashboard = ({userRole}) => {
     try {
       const response = await axios.get("http://127.0.0.1:8000/api/getpersonnel/queue/lamination")
       const data = response.data
+
+      setLaminationQueue(data)
 
       const filteredRequests = data.filter(
         (request) => request.queue_status === "Pending" || request.queue_status === "In Progress"
@@ -458,6 +439,7 @@ export const PersonnelDashboard = ({userRole}) => {
         selectColor: selectInitialColor,
         handleLaminationDetailsClick,
         isTextStatus: user.role !== "Office Head",
+        user
       }))
 
       const readyToClaimMappedLaminationRequest = filteredReadyToClaimRequests.map((requestDetail) => LaminationQueue({
@@ -467,7 +449,8 @@ export const PersonnelDashboard = ({userRole}) => {
         handleLaminationDetailsClick,
         proceedLaminationBill,
         isTextStatus: user.role !== "Office Head",
-        removeQueue
+        removeQueue,
+        user
       }))
 
 
@@ -489,6 +472,8 @@ export const PersonnelDashboard = ({userRole}) => {
     return () => clearInterval(interval);
   }, [])
 
+
+  
   const printDashboard = () => {  
     return (
       
@@ -499,7 +484,7 @@ export const PersonnelDashboard = ({userRole}) => {
           "Type",
           "Request-Type",
           "Status",
-          "Details",
+          "Details"
         ]}
         dashboardData={queueRequest}
         readyToClaimHeader={[
@@ -549,9 +534,9 @@ export const PersonnelDashboard = ({userRole}) => {
           readyToClaimData={readyToClaimBBRequest}
           dashboardTitle="Personnel Book Binding Dashboard"
           readyToClaimTitle="Ready To Claim Personnel Book Binding Request"
-          pendingCount={bookBindRequest.filter((request) => request.Status.props.children !== "Ready to Claim").length || queueRequest.filter((request) => request.Status.props.value !== "Ready to Claim").length}
-          totalCount={bookBindRequest.length}
-          readyCount={bookBindRequest.filter((request) => request.Status.props.children === "Ready to Claim").length || queueReadytoClaimRequest.filter((request) => request.Status.props.value === "Ready to Claim").length}
+          pendingCount={bookBindRequest.filter((request) => request.Status.props.children !== "Ready to Claim").length || bookBindRequest.filter((request) => request.Status.props.value !== "Ready to Claim").length}
+          totalCount={bbQueue.length}
+          readyCount={bookBindRequest.filter((request) => request.Status.props.children === "Ready to Claim").length || readyToClaimBBRequest.filter((request) => request.Status.props.value === "Ready to Claim").length || readyToClaimBBRequest.filter((request) => request.Status.props.children === "Ready to Claim").length}
         />
         )
         
@@ -581,9 +566,9 @@ export const PersonnelDashboard = ({userRole}) => {
         readyToClaimData={readyToClaimLamRequest}
         dashboardTitle="Personnel Lamination Dashboard"
         readyToClaimTitle="Ready To Claim Personnel Lamination Request"
-        pendingCount={laminationRequest.filter((request) => request.Status.props.children !== "Ready to Claim").length || queueRequest.filter((request) => request.Status.props.value !== "Ready to Claim").length}
-        totalCount={laminationRequest.length}
-        readyCount={laminationRequest.filter((request) => request.Status.props.children === "Ready to Claim").length || queueReadytoClaimRequest.filter((request) => request.Status.props.value === "Ready to Claim").length}
+        pendingCount={laminationRequest.filter((request) => request.Status.props.children !== "Ready to Claim").length || laminationRequest.filter((request) => request.Status.props.value !== "Ready to Claim").length}
+        totalCount={laminationQueue.length}
+        readyCount={readyToClaimLamRequest.filter((request) => request.Status.props.children === "Ready to Claim").length || readyToClaimLamRequest.filter((request) => request.Status.props.value === "Ready to Claim").length}
       />
     );
   };
