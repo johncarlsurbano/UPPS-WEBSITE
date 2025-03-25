@@ -51,7 +51,10 @@ import { StudentForm  } from './screens/StudentForm.jsx'
 import { PersonnelForm } from './screens/PersonnelForm.jsx'
 import { RawMaterialsInventory } from './components/RawMaterialsInventory.jsx'
 import { StockCard } from './screens/StockCard.jsx'
-
+import {RawPortrait} from './screens/RawPortrait.jsx'
+import { FinishedGoodsPortrait } from './screens/FinishedGoodsPortrait.jsx'
+import { InProcessInventory } from './screens/InProcessInventory.jsx'
+import { RawInventory } from './screens/RawInventory.jsx'
  
 
  function App() {
@@ -63,8 +66,12 @@ import { StockCard } from './screens/StockCard.jsx'
         <Routes>
           
 
-          <Route path="/" element={<Navigate to={"/stockcard"} replace/>} />
+          <Route path="/" element={<Navigate to={"/rawinventory"} replace/>} />
           <Route path="/stockcard" element={<StockCard />} />
+          <Route path="/rawportrait" element={<RawPortrait />} />
+          <Route path="/finishgoodsportrait" element={<FinishedGoodsPortrait />} />
+          <Route path="/inprocessinventory" element={<InProcessInventory />} />
+          <Route path="/rawinventory" element={<RawInventory />} />
           
           <Route path="/create-account" element={<CreateAccount />} />
           <Route path="/registrationcode" element={<RegistrationCode />} /> 

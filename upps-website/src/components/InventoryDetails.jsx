@@ -17,7 +17,8 @@ export const InventoryDetails = ({
   const formatDate = inventoryDetails.updated_at
     .replace("T", " ")
     .substring(0, 19);
-
+  
+  console.log(inventoryDetails)
   return {
     "Item Name": isEditing ? (
       <input

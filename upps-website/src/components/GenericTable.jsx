@@ -10,7 +10,7 @@
       
       return (
         <div className="generic-table flex justify-center">
-          <div className="generic-table-main flex flex-col bg-white h-[500px] w-full max-w-[100%] rounded-lg overflow-auto shadow-lg mt-8 mb-40">
+          <div className="generic-table-main flex flex-col bg-white h-[500px] w-full max-w-[100%] rounded-lg overflow-auto shadow-lg mt-8 mb-[2rem]">
             <div className="generic-table-container flex flex-col w-full">
               <div className="generic-table-content flex flex-col w-full">
                 <table className="w-full min-w-full border-collapse">
@@ -31,7 +31,8 @@
                     {sortedData.map((row, rowIndex) => (
                       <tr key={rowIndex} className={`${row.isUrgent ? 'bg-red-500 text-white' : ''}`}>
                         {headers.map((header, colIndex) => (
-                          <td key={colIndex} className="px-8 py-4">
+                          <td key={colIndex} className={`px-8 py-4 whitespace-normal overflow-hidden 
+                            ${colIndex === 0 ? 'w-[20rem] min-w-[30rem] max-w-[20rem]' : ''}`}>
                             {typeof row[header] === "string" || typeof row[header] === "number" ? (
                               row[header]
                             ) : (

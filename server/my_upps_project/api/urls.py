@@ -25,7 +25,16 @@ urlpatterns = [
     path('deletestudent/request/<int:pk>/', DeleteStudentReadyToClaimView().as_view(), name="deletestudentrequest"),
 
     path('servicetype/', SeriviceTypeView.as_view(), name="servicetype"),
+
     path('papertype/', PaperTypeView.as_view(), name="paperType"),
+    path("available/paper-types/", available_paper_types, name="available-paper-types"),
+
+    path('inktype/', InkTypeView.as_view(), name="inktype"),
+    path('tonertype/', TonerTypeView.as_view(), name="tonertype"),
+    path('ringbindertype/', RingBinderTypeView.as_view(), name="ringbindertype"),
+    # path('laminationfilmsize/', LaminationFilmSizeView.as_view(), name="laminationfilmsize"), 
+
+
     path('print/requesttype/', RequestTypeView.as_view(), name="requesttype"),
     path('print/printingtype/',PrintingTypeView.as_view(), name="printingType"),
     path('queue/', QueueView.as_view(), name="queue"),
@@ -53,6 +62,7 @@ urlpatterns = [
     path('updatepaidstatus/<int:pk>/', updatePaidStatusView.as_view(), name="updatepaidstatus"),
     path('signatories/', SignatoriesView.as_view(), name="signatories"),
     path('inventory/additem/', CreatePrintingInventoryView.as_view(), name="createprintinginventory"),
+    path('newaddinventory/', newCreateInventory.as_view(), name="newaddinventory"),
     path('inventory/addream/', InventoryAddReamView.as_view(), name="inventoryaddream"),
     path('deleteinventory/<int:pk>/', DeletePrintingInventoryView.as_view(), name="deleteinventory"),
 
@@ -131,19 +141,30 @@ urlpatterns = [
     #### INVENTORY
     path('inventory-items/', InventoryItemListCreateView.as_view(), name='inventory-items-list'),
     path('inventory-items/<int:pk>/', InventoryItemDetailView.as_view(), name='inventory-items-detail'),
+    path('inventory/<str:paper_type>/', PaperTypeInventoryView.as_view(), name='paper-type-inventory'),
 
     path('raw-materials/', RawMaterialsInventoryListCreateView.as_view(), name='raw-materials-list'),
     path('raw-materials/<int:pk>/', RawMaterialsInventoryDetailView.as_view(), name='raw-materials-detail'),
+    path("raw-materials/add-stock/", AddStockToRawMaterialsView.as_view(), name="add-stock-raw-materials"),
 
-    path('work-in-process/', WorkInProcessInventoryListCreateView.as_view(), name='work-in-process-list'),
-    path('work-in-process/<int:pk>/', WorkInProcessInventoryDetailView.as_view(), name='work-in-process-detail'),
+    path('work-in-process/', WorkInProcessInventoryListCreateView.as_view(), name='wip-list'),
+    # path('work-in-process/<int:pk>/', WorkInProcessInventoryDetailView.as_view(), name='wip-detail'),
+    
+    path('transfer/raw-to-wip/', TransferRawToWIPView.as_view(), name='transfer-raw-to-wip'),
 
-    path('transfer-raw-to-wip/', TransferRawToWIPView.as_view(), name='transfer-raw-to-wip'),
- 
-    path("deduct-inventory/", DeductInventoryFIFOView.as_view(), name="deduct-inventory"),
+    path('deduct/fifo/', DeductFIFOStockView.as_view(), name='deduct-inventory-fifo'),
+
+    # New URL for viewing FIFO order of Work In Process inventory
+    path('fifo-list/', WorkInProcessFIFOListView.as_view(), name='work-in-process-fifo'),
+    
 
     path("stockcard/", StockCardView.as_view(), name="stockcard"),
-     path("stockcard/<int:inventory_id>/", StockCardByInventoryView.as_view(), name="stock-cards-by-inventory"),
+    path("stockcard/<int:inventory_id>/", StockCardByInventoryView.as_view(), name="stock-cards-by-inventory"),
+
+    path("items-issued-month/report", ReportOfSuppliesAndMaterialsView.as_view(), name="reportofsupplies-and-materials"),
+
+
+    
 
 ]   
 

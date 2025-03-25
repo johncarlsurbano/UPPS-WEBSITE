@@ -87,27 +87,27 @@ export const StockCard = () => {
           <div className="flex flex-col">
             <div className="flex gap-2">
               <p>Unit Price:</p>
-              <p className="underline"></p>
+              <p className="underline">{item.raw_materials_inventory?.inventory_item?.unit_value || "N/A"} </p>
             </div>
             <div className="flex gap-2">
               <p>Article:</p>
-              <p className="underline">{item.printing_inventory.paper_type.paper_type}</p>
+              <p className="underline">{item.raw_materials_inventory?.inventory_item_name || "N/A"}</p>
             </div>
             <div className="flex gap-2">
               <p>Description:</p>
               <p className="underline">
-                description
+                
               </p>
             </div>
           </div>
           <div className="flex flex-col">
             <div className="flex gap-2">
               <p>Stock No.</p>
-              <p className="underline">Stock No. Value </p>
+              <p className="underline"> </p>
             </div>
             <div className="flex gap-2">
               <p>Quantity Unit</p>
-              <p className="underline">Ream</p>
+              <p className="underline">{item.raw_materials_inventory?.inventory_item?.unit || "N/A"} </p>
             </div>
           </div>
         </div>

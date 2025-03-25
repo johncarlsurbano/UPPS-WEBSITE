@@ -13,7 +13,21 @@ from .utils.email_utls import send_email
 from rest_framework.exceptions import ValidationError
 import random
 from django.shortcuts import render
+from django.db.models import Sum
+from django.utils.timezone import now
+from datetime import datetime, timedelta
+from django.db import transaction
+from django.shortcuts import get_object_or_404
 
+
+@api_view(["GET"])
+def available_paper_types(request):
+    """Fetch unique paper types available in WorkInProcessInventory"""
+    paper_types = PaperType.objects.filter(
+        inventoryitem__workinprocessinventory__isnull=False
+    ).distinct()
+
+    return Response([{"id": pt.id, "paper_type": pt.paper_type} for pt in paper_types])
 
 def validate_inventory(paper_type_id, total_pages_required):
     try:
@@ -183,17 +197,18 @@ class UpdateUserView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = GetUserSerializer
 
+
 class StudentView(generics.ListCreateAPIView):
     queryset = StudentPrintForm.objects.all()
     serializer_class = StudentFormSerializer
 
     def create(self, request, *args, **kwargs):
         # Extract PDF file from request
-        pdf_file = request.FILES.get('pdf')
-        
-        # Calculate the number of pages
+        pdf_file = request.FILES.get("pdf")
+        page_count = 0
+
+        # ✅ Calculate the number of pages
         if pdf_file:
-            page_count = 0
             try:
                 reader = PdfReader(pdf_file)
                 page_count = len(reader.pages)
@@ -201,13 +216,14 @@ class StudentView(generics.ListCreateAPIView):
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             # If no PDF, get the page count manually from the input
-            page_count = request.data.get('page_count')
-            if not page_count or not page_count.isdigit():
+            page_count = request.data.get("page_count")
+            if not page_count or not str(page_count).isdigit():
                 return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
                                 status=status.HTTP_400_BAD_REQUEST)
             page_count = int(page_count)
-            
-        print_request_details_id = request.data.get('print_request_details')
+
+        # ✅ Retrieve print request details
+        print_request_details_id = request.data.get("print_request_details")
         if not print_request_details_id:
             return Response({"error": "Print request details are required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -216,33 +232,35 @@ class StudentView(generics.ListCreateAPIView):
         except PrintRequestDetails.DoesNotExist:
             return Response({"error": "Print request details not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Extract paper_type and quantity from PrintRequestDetails
-        paper_type = print_request_details.paper_type
-        quantity = print_request_details.quantity
+        # ✅ Get paper type from WorkInProcessInventory
+        work_in_process_inventory = print_request_details.work_in_process_inventory
+        if not work_in_process_inventory:
+            return Response({"error": "No WorkInProcessInventory linked to this request."}, status=status.HTTP_400_BAD_REQUEST)
 
+        paper_type = work_in_process_inventory.inventory_item.paper_type
         if not paper_type:
-            return Response({"error": "Paper type is missing in PrintRequestDetails."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Paper type is missing in WorkInProcessInventory."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate total pages required
-        total_pages_required = page_count * quantity
+        # ✅ Calculate total sheets required
+        quantity = print_request_details.quantity
+        total_sheets_required = (page_count * quantity) / 2 if print_request_details.duplex else page_count * quantity
 
-        # Validate inventory for total pages required
-        try:
-            validate_inventory(paper_type.id, total_pages_required)
-        except ValidationError as e:
+        # ✅ Validate inventory based on `sheets_per_ream`
+        if work_in_process_inventory.sheets_per_ream < total_sheets_required:
             return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Save the request
+        # ✅ Save the request (No stock deduction here)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request_instance = serializer.save(page_count=page_count)
 
-        # Prepare the response
+        # ✅ Prepare the response
         headers = self.get_success_headers(serializer.data)
         response_data = serializer.data
-        response_data['page_count'] = page_count  # Include page count in the response
+        response_data["page_count"] = page_count  # Include page count in the response
 
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 class GetStudentView(generics.ListAPIView):
     queryset = StudentPrintForm.objects.all()
@@ -351,6 +369,39 @@ class SeriviceTypeView(generics.ListCreateAPIView):
 class PaperTypeView(generics.ListCreateAPIView):
     queryset = PaperType.objects.all()
     serializer_class = PaperTypeSerializer
+
+class InkTypeView(generics.ListCreateAPIView):
+    queryset = InkType.objects.all()
+    serializer_class = InkTypeSerializer
+
+class TonerTypeView(generics.ListCreateAPIView):
+    queryset = TonerType.objects.all()
+    serializer_class = TonerTypeSerializer
+
+class RingBinderTypeView(generics.ListCreateAPIView):
+    queryset = RingBinderType.objects.all()
+    serializer_class = RingBinderTypeSerializer
+
+# class LaminationFilmSizeView(generics.ListCreateAPIView):
+#     queryset = LaminationFilmSize.objects.all()
+#     serializer_class = LaminationFilmSizeSerializer
+
+class PaperTypeInventoryView(APIView):
+    def get(self, request, paper_type):
+        # Filter items based on paper type
+        inventory_items = InventoryItem.objects.filter(paper_type__paper_type=paper_type)
+
+        # Calculate the total reams (onhand_per_count)
+        total_reams = inventory_items.aggregate(total_reams=Sum('balance_per_card'))['total_reams']
+
+        # Serialize the inventory items
+        serializer = InventoryItemSerializer(inventory_items, many=True)
+
+        return Response({
+            "paper_type": paper_type,
+            "total_reams": total_reams if total_reams else 0,  # Default to 0 if no data
+            "inventory_items": serializer.data
+        })
 
 class RequestTypeView(generics.ListCreateAPIView):
     queryset = RequestType.objects.all()
@@ -541,7 +592,7 @@ class CreateRequestView(generics.ListCreateAPIView):
         # Extract PDF file from request
         pdf_file = request.FILES.get('pdf')
         page_count = 0
-        
+
         # Calculate the number of pages
         if pdf_file:
             try:
@@ -552,13 +603,13 @@ class CreateRequestView(generics.ListCreateAPIView):
         else:
             # If no PDF, get the page count manually from the input
             page_count = request.data.get('page_count')
-            if not page_count or not page_count.isdigit():
+            if not page_count or not str(page_count).isdigit():
                 return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
                                 status=status.HTTP_400_BAD_REQUEST)
             page_count = int(page_count)
-        
 
-        print_request_details_id = request.data.get('print_request_details')
+        # ✅ Get `print_request_details`
+        print_request_details_id = request.data.get("print_request_details")
         if not print_request_details_id:
             return Response({"error": "Print request details are required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -567,34 +618,40 @@ class CreateRequestView(generics.ListCreateAPIView):
         except PrintRequestDetails.DoesNotExist:
             return Response({"error": "Print request details not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Extract paper_type and quantity from PrintRequestDetails
-        paper_type = print_request_details.paper_type
+        # ✅ Get `paper_type` through `WorkInProcessInventory`
+        work_in_process_inventory = print_request_details.work_in_process_inventory
+        if not work_in_process_inventory:
+            return Response({"error": "No WorkInProcessInventory linked to this request."}, status=status.HTTP_400_BAD_REQUEST)
+
+        paper_type = work_in_process_inventory.inventory_item.paper_type
+        if not paper_type:
+            return Response({"error": "Paper type is missing in WorkInProcessInventory."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ Extract quantity from PrintRequestDetails
         quantity = print_request_details.quantity
 
-        if not paper_type:
-            return Response({"error": "Paper type is missing in PrintRequestDetails."}, status=status.HTTP_400_BAD_REQUEST)
+        # ✅ Calculate total sheets required
+        total_sheets_required = page_count * quantity  # Now calculated in sheets
 
-        # Calculate total pages required
-        total_pages_required = page_count * quantity
-
-        # Validate inventory for total pages required
-        try:
-            validate_inventory(paper_type.id, total_pages_required)
-        except ValidationError as e:
+        # ✅ Validate inventory based on `sheets_per_ream`
+        if work_in_process_inventory.sheets_per_ream < total_sheets_required:
             return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Save the request
+
+        # ✅ Save the request
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request_instance = serializer.save(page_count=page_count)
 
-        # Prepare the response
+        # ✅ Prepare the response
         headers = self.get_success_headers(serializer.data)
         response_data = serializer.data
-        response_data['page_count'] = page_count  # Include page count in the response
-        response_data['file_url'] = request.build_absolute_uri(response_data['pdf'])
+        response_data["page_count"] = page_count  # Include page count in the response
+        response_data["file_url"] = request.build_absolute_uri(response_data["pdf"])
 
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
+
     
 
 
@@ -654,7 +711,7 @@ class InventoryAddReamView(generics.ListCreateAPIView):
     queryset = PrintingInventory.objects.all()
     serializer_class = AddItemPrintingSerializer
 
-class   UpdatePrintingInventoryView(generics.RetrieveUpdateAPIView):
+class UpdatePrintingInventoryView(generics.RetrieveUpdateAPIView):
     queryset = PrintingInventory.objects.all()
     serializer_class = UpdatePrintingInventorySerializer
 
@@ -683,6 +740,10 @@ class SignatoriesView(generics.ListCreateAPIView):
 class CreatePrintingInventoryView(generics.ListCreateAPIView):
     queryset = PrintingInventory.objects.all()
     serializer_class = AddItemPrintingSerializer
+
+class newCreateInventory(generics.ListCreateAPIView):
+    queryset = PrintingInventory.objects.all()
+    serializer_class = newAddInventorySerializer
 
 class DeletePrintingInventoryView(generics.RetrieveDestroyAPIView):
     queryset = PrintingInventory.objects.all()
@@ -731,12 +792,11 @@ class CreateBookBindPersonnelRequestView(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         # Extract PDF file from request
-        pdf_file = request.FILES.get('pdf')
-        
+        pdf_file = request.FILES.get("pdf")
+        page_count = 0
 
-        # Calculate the number of pages
+        # ✅ Calculate the number of pages
         if pdf_file:
-            page_count = 0
             try:
                 reader = PdfReader(pdf_file)
                 page_count = len(reader.pages)
@@ -744,48 +804,61 @@ class CreateBookBindPersonnelRequestView(generics.ListCreateAPIView):
                 return Response({"error": f"Failed to read PDF: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             # If no PDF, get the page count manually from the input
-            page_count = request.data.get('page_count')
-            if not page_count or not page_count.isdigit():
+            page_count = request.data.get("page_count")
+            if not page_count or not str(page_count).isdigit():
                 return Response({"error": "Manual page count is required and must be a positive integer when no PDF is provided."}, 
                                 status=status.HTTP_400_BAD_REQUEST)
             page_count = int(page_count)
-            
-        book_binding_request_details_id = request.data.get('book_binding_request_details')
+
+        # ✅ Retrieve book binding request details
+        book_binding_request_details_id = request.data.get("book_binding_request_details")
         if not book_binding_request_details_id:
-            return Response({"error": "Book binding request are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Book binding request is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             book_binding_request_details = BookBindingRequestDetails.objects.get(id=book_binding_request_details_id)
         except BookBindingRequestDetails.DoesNotExist:
             return Response({"error": "Book binding details not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Extract paper_type and quantity from PrintRequestDetails
-        paper_type = book_binding_request_details.paper_type
+        # ✅ Get `book_bind_type`, `book_bind_request_type`, and `quantity`
+        book_bind_type = book_binding_request_details.book_bind_type
+        book_bind_request_type = book_binding_request_details.request_type
+        work_in_process_inventory = book_binding_request_details.work_in_process_inventory.all()  # ✅ Fix: Get all inventory records
         quantity = book_binding_request_details.quantity
 
-        if not paper_type:
-            return Response({"error": "Paper type is missing in Book Binding Details."}, status=status.HTTP_400_BAD_REQUEST)
+        # ✅ Find the correct `paper_type` and `ring_binder_type`
+        paper_type = work_in_process_inventory.filter(inventory_item__paper_type__isnull=False).values_list("inventory_item__paper_type", flat=True).first()
+        ring_binder_type = work_in_process_inventory.filter(inventory_item__ring_binder_type__isnull=False).values_list("inventory_item__ring_binder_type", flat=True).first()
 
-        # Calculate total pages required
-        total_pages_required = page_count * quantity
+        # ✅ If `book_bind_type` is "Computer Book Bind", `paper_type` must be provided and validated
+        if book_bind_type.book_bind_type_name == "Computer Book Bind":
+            if not paper_type:
+                return Response({"error": "Paper type is required for Computer Book Bind."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate inventory for total pages required
-        try:
-            validate_inventory(paper_type.id, total_pages_required)
-        except ValidationError as e:
-            return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
+            total_sheets_required = page_count * quantity  # Calculate total sheets needed
 
-        # Save the request
+            # ✅ Validate inventory based on `sheets_per_ream`
+            total_sheets_available = work_in_process_inventory.aggregate(total_sheets=Sum("sheets_per_ream"))["total_sheets"] or 0
+            if total_sheets_available < total_sheets_required:
+                return Response({"error": "INSUFFICIENT STOCKS"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ If `book_bind_request_type` is "Ring Bound", `ring_binder_type` must be provided
+        if book_bind_request_type.request_type_name == "Ring Bound":
+            if not ring_binder_type:
+                return Response({"error": "Ring binder type is required for Ring Bound."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ Save the request
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request_instance = serializer.save(page_count=page_count)
 
-        # Prepare the response
+        # ✅ Prepare the response
         headers = self.get_success_headers(serializer.data)
         response_data = serializer.data
-        response_data['page_count'] = page_count  # Include page count in the response
+        response_data["page_count"] = page_count  # Include page count in the response
 
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
     
 class GetBookBindPersonnelRequestView(generics.ListAPIView):
     queryset = BookBindingPersonnelRequest.objects.all()
@@ -1373,7 +1446,6 @@ class InventoryItemDetailView(generics.RetrieveUpdateAPIView):
     queryset = InventoryItem.objects.all()
     serializer_class = InventoryItemSerializer
 
-# Raw Materials Inventory CRUD Views
 class RawMaterialsInventoryListCreateView(generics.ListCreateAPIView):
     queryset = RawMaterialsInventory.objects.all()
     serializer_class = RawMaterialsInventorySerializer
@@ -1382,18 +1454,64 @@ class RawMaterialsInventoryDetailView(generics.RetrieveUpdateAPIView):
     queryset = RawMaterialsInventory.objects.all()
     serializer_class = RawMaterialsInventorySerializer
 
+class AddStockToRawMaterialsView(APIView):
+    """Adds stock to a specific item in RawMaterialsInventory."""
+
+    def post(self, request, *args, **kwargs):
+        item_id = request.data.get("item_id")
+        quantity = int(request.data.get("quantity", 0))
+
+        if quantity <= 0:
+            return Response({"error": "Quantity must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            inventory_item = InventoryItem.objects.get(id=item_id)
+            raw_material, created = RawMaterialsInventory.objects.get_or_create(inventory_item=inventory_item)
+
+            # Update stock in InventoryItem
+            previous_balance = inventory_item.balance_per_card
+            inventory_item.balance_per_card += quantity
+            inventory_item.save()
+
+            # Update stock in RawMaterialsInventory
+            previous_stock = raw_material.stock_quantity
+            raw_material.stock_quantity += quantity
+            raw_material.save()
+
+            # Log stock addition in StockCard
+            StockCard.objects.create(
+                raw_materials_inventory=raw_material,
+                issued=timezone.now().date(),
+                requisition="",
+                receiver="Supply",
+                quantity_issued=0,
+                quantity_received=quantity,
+                quantity_on_hand=raw_material.stock_quantity,
+                remarks=f"Added {quantity} (Prev: {previous_stock})"
+            )
+
+            return Response({
+                "message": "Stock added successfully",
+                "new_balance_per_card": inventory_item.balance_per_card,
+                "new_stock_quantity": raw_material.stock_quantity
+            }, status=status.HTTP_200_OK)
+
+        except InventoryItem.DoesNotExist:
+            return Response({"error": "Inventory item not found"}, status=status.HTTP_404_NOT_FOUND)
+
 # Work In Process Inventory CRUD Views
 class WorkInProcessInventoryListCreateView(generics.ListCreateAPIView):
-    queryset = WorkInProcessInventory.objects.all()
+    queryset = WorkInProcessInventory.objects.all().order_by("created_at")  # FIFO order
     serializer_class = WorkInProcessInventorySerializer
+
 
 class WorkInProcessInventoryDetailView(generics.RetrieveUpdateAPIView):
     queryset = WorkInProcessInventory.objects.all()
     serializer_class = WorkInProcessInventorySerializer
 
-# Transfer Stock from Raw Materials to Work In Process
+
 class TransferRawToWIPView(APIView):
-    """Transfers stock from Raw Materials to Work In Process"""
+    """Handles transfers from Raw Materials to Work In Process"""
 
     def post(self, request, *args, **kwargs):
         raw_material_id = request.data.get("raw_material_id")
@@ -1401,51 +1519,248 @@ class TransferRawToWIPView(APIView):
 
         try:
             raw_material = RawMaterialsInventory.objects.get(id=raw_material_id)
-            wip_inventory, created = WorkInProcessInventory.objects.get_or_create(inventory_item=raw_material.inventory_item)
 
-            if raw_material.deduct_stock(quantity):
-                wip_inventory.add_stock(quantity)
-                return Response({"message": "Stock transferred successfully"}, status=status.HTTP_200_OK)
+            if raw_material.inventory_item.balance_per_card < quantity:
+                return Response({"error": "Not enough stock in Raw Materials"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # ✅ Deduct from Raw Materials
+            previous_balance = raw_material.inventory_item.balance_per_card
+            raw_material.inventory_item.balance_per_card -= quantity
+            raw_material.inventory_item.save()
+
+            # ✅ Create Stock Card Entry
+            StockCard.objects.create(
+                raw_materials_inventory=raw_material,
+                issued=timezone.now().date(),
+                requisition="",
+                receiver="Roy M.",
+                quantity_issued=quantity,
+                quantity_received=0,
+                quantity_on_hand=raw_material.inventory_item.balance_per_card,
+                remarks=f"Transferred {quantity} from Raw Materials (Prev: {previous_balance})"
+            )
+
+            # ✅ Update Work In Process Inventory
+            wip_entry, created = WorkInProcessInventory.objects.get_or_create(
+                inventory_item=raw_material.inventory_item,
+                defaults={"balance_per_card": 0, "sheets_per_ream": 0},
+                
+            )
+            wip_entry.balance_per_card += quantity
+            
+
+            if wip_entry.inventory_item.unit in ['ream', 'reams']:
+                wip_entry.sheets_per_ream = wip_entry.balance_per_card * 500
+                available_count_unit = quantity * 500
+
+            elif wip_entry.inventory_item.unit == 'length'or wip_entry.inventory_item.category == 'Film' :
+                wip_entry.sheets_per_ream = wip_entry.balance_per_card * 4
+                available_count_unit = quantity * 4
             else:
-                return Response({"error": "Not enough stock"}, status=status.HTTP_400_BAD_REQUEST)
-        
+                wip_entry.sheets_per_ream = wip_entry.balance_per_card
+                available_count_unit = quantity 
+                
+
+
+            wip_entry.save()
+
+            
+            # ✅ Log FIFO entry (Tracking Transfers)
+            WorkInProcessFIFO.objects.create(
+                work_in_process=wip_entry,
+                transferred_quantity=quantity,
+                sheets_per_ream = wip_entry.sheets_per_ream,
+                transferred_count = available_count_unit
+            )
+
+            # ✅ Calculate First & Last Day of the Current Month
+            today = timezone.now().date()
+            first_day = today.replace(day=1)
+            last_day = (first_day.replace(month=first_day.month % 12 + 1, day=1) - timedelta(days=1))
+
+            # ✅ Update or Create Report Entry
+            report, created = ReportOfMaterialsAndMaterialsIssued.objects.get_or_create(
+                raw_materials_inventory=raw_material,
+                date__range=[first_day, last_day],  # Ensure it's within the current month
+                defaults={
+                    "date": first_day,  # Always first day of the month
+                    "responsibility_center_code": None,
+                    "stock_number": None,
+                    "item": raw_material.inventory_item.name,
+                    "unit": raw_material.inventory_item.unit,
+                    "quantity_issued": quantity,  # Start with current issued quantity
+                    "unit_cost": raw_material.inventory_item.unit_value,
+                    "amount": raw_material.inventory_item.unit_value * quantity,
+                    "or_number": None,
+                }
+            )
+
+            if not created:
+                report.quantity_issued = (report.quantity_issued or 0) + quantity  # Update issued quantity
+                report.amount = (report.unit_cost or 0) * report.quantity_issued  # Recalculate total cost
+                report.save()
+
+            return Response({   
+                "message": "Stock transferred successfully",
+                "raw_material_balance": raw_material.inventory_item.balance_per_card,
+                "wip_balance": wip_entry.balance_per_card,
+                "report_updated": not created  # True if existing report was updated
+            }, status=status.HTTP_200_OK)
+
         except RawMaterialsInventory.DoesNotExist:
             return Response({"error": "Raw material not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-class DeductInventoryFIFOView(APIView):
-    """Deducts inventory using FIFO when fulfilling a print request"""
 
-    def post(self, request, *args, **kwargs):
-        paper_type = request.data.get("paper_type")
-        quantity_needed = int(request.data.get("quantity", 0))
 
-        if not paper_type or quantity_needed <= 0:
-            return Response({"error": "Invalid paper type or quantity"}, status=status.HTTP_400_BAD_REQUEST)
 
-        inventory = InventoryItem.objects.filter(
-            paper_type__paper_type=paper_type,
-            category="Paper",
-            onhand_per_count__gt=0
-        ).order_by("created_at")  # FIFO ordering
+
+
+
+class DeductFIFOStockView(APIView):
+    def post(self, request):
+        paper_type_id = request.data.get("paper_type_id")
+        ink_color_id = request.data.get("ink_color_id")
+        toner_color_id = request.data.get("toner_color_id")
+        ring_binder_type_id = request.data.get("ring_binder_type_id")
+        film_category = request.data.get("film_category")
+        quantity = int(request.data.get("quantity", 0))
+
+
+        if quantity <= 0:
+            return Response({"error": "Valid quantity is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         total_deducted = 0
-        for item in inventory:
-            if total_deducted >= quantity_needed:
-                break  # Stop once the request is fulfilled
+        updated_entries = []
 
-            if item.onhand_per_count >= (quantity_needed - total_deducted):
-                item.onhand_per_count -= (quantity_needed - total_deducted)
-                total_deducted = quantity_needed
-            else:
-                total_deducted += item.onhand_per_count
-                item.onhand_per_count = 0  # Deplete stock
+        def process_fifo(inventory_queryset, unit_size):
+            nonlocal total_deducted
 
-            item.save()
+            fifo_entries = WorkInProcessFIFO.objects.filter(
+                work_in_process__in=inventory_queryset, transferred_quantity__gt=0
+            ).order_by("created_at")
 
-        if total_deducted < quantity_needed:
-            return Response({"error": "Not enough stock available"}, status=status.HTTP_400_BAD_REQUEST)
+            for fifo_entry in fifo_entries:
+                if total_deducted >= quantity:
+                    break
+                if fifo_entry.transferred_quantity == 0:
+                    continue
 
-        return Response({"message": f"Successfully deducted {quantity_needed} reams in FIFO order"}, status=status.HTTP_200_OK)
+                remaining_quantity = quantity - total_deducted
+                max_deductible_units = fifo_entry.transferred_quantity * unit_size
+
+                if remaining_quantity >= max_deductible_units:
+                    units_to_deduct = max_deductible_units
+                    fifo_entry.transferred_count = max(0, fifo_entry.transferred_count - units_to_deduct)
+                else:
+                    units_to_deduct = remaining_quantity
+                    fifo_entry.transferred_count = max(0, fifo_entry.transferred_count - units_to_deduct)
+
+                total_deducted += units_to_deduct
+
+                new_transferred_quantity = fifo_entry.transferred_count // unit_size
+                if fifo_entry.transferred_count % unit_size == 0:
+                    fifo_entry.transferred_quantity = new_transferred_quantity
+                
+                fifo_entry.work_in_process.sheets_per_ream = max(0, fifo_entry.work_in_process.sheets_per_ream - units_to_deduct)
+                fifo_entry.work_in_process.balance_per_card = max(0, fifo_entry.work_in_process.sheets_per_ream // unit_size)
+                
+                fifo_entry.save()
+                fifo_entry.work_in_process.save()
+
+                updated_entries.append({
+                    "fifo_id": fifo_entry.id,
+                    "work_in_process_id": fifo_entry.work_in_process.id,
+                    "sheets_per_ream": fifo_entry.work_in_process.sheets_per_ream,
+                    "balance_per_card": fifo_entry.work_in_process.balance_per_card,
+                    "transferred_quantity": fifo_entry.transferred_quantity,
+                    "transferred_count": fifo_entry.transferred_count,
+                })
+
+        if paper_type_id:
+            paper_inventories = WorkInProcessInventory.objects.filter(
+                inventory_item__paper_type_id=paper_type_id
+            ).order_by("created_at")
+            process_fifo(paper_inventories, 500)
+        if ink_color_id:
+            ink_inventories = WorkInProcessInventory.objects.filter(
+                inventory_item__ink_color_id=ink_color_id
+            ).order_by("created_at")
+            process_fifo(ink_inventories, 1)
+        if toner_color_id:
+            toner_inventories = WorkInProcessInventory.objects.filter(
+                inventory_item__toner_color_id=toner_color_id
+            ).order_by("created_at")
+            process_fifo(toner_inventories, 1)
+        if ring_binder_type_id:
+            binder_inventories = WorkInProcessInventory.objects.filter(
+                inventory_item__ring_binder_type_id=ring_binder_type_id
+            ).order_by("created_at")
+            process_fifo(binder_inventories, 4)
+
+        if film_category:
+            film_inventories = WorkInProcessInventory.objects.filter(
+                inventory_item__category="Film"
+            ).order_by("created_at")
+            process_fifo(film_inventories, 4)
+
+        if total_deducted < quantity:
+            return Response({"error": "Not enough stock available to fulfill the request"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "message": "Items deducted successfully",
+            "total_items_deducted": total_deducted,
+            "updated_entries": updated_entries
+        }, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class WorkInProcessFIFOListView(generics.ListAPIView):
+    """View Work In Process FIFO transfers in FIFO order."""
+    serializer_class = WorkInProcessFIFOSerializer  # ✅ Use a new FIFO serializer
+
+    def get_queryset(self):
+        category = self.request.query_params.get("category", None)
+        size = self.request.query_params.get("size", None)  # Paper size (A4, Legal, etc.)
+        color = self.request.query_params.get("color", None)  # Ink color filter
+        toner_color = self.request.query_params.get("toner_color", None)
+        ring_binder_size = self.request.query_params.get("ring_binder_size", None)  # Ring binder type filter
+
+        queryset = WorkInProcessFIFO.objects.all().order_by("created_at")  # ✅ FIFO ordering
+
+        if category:
+            
+            queryset = queryset.filter(work_in_process__inventory_item__category__iexact=category)
+
+            if category.lower() == "paper" and size:
+                queryset = queryset.filter(work_in_process__inventory_item__paper_type__paper_type=size)
+
+            elif category.lower() == "ink" and color:
+                queryset = queryset.filter(work_in_process__inventory_item__ink_type__ink_color__iexact=color)
+
+            elif category.lower() == "toner" and toner_color:
+                queryset = queryset.filter(work_in_process__inventory_item__toner_type__toner_color__iexact=toner_color)
+
+            elif category.lower() == "binding" and ring_binder_size:
+                queryset = queryset.filter(work_in_process__inventory_item__ring_binder_size__exact=ring_binder_size)
+
+            elif category.lower() == "film":
+                queryset = queryset.filter(work_in_process__inventory_item__category="Film")
+
+        return queryset
+
+
 
 
 class StockCardView(generics.ListCreateAPIView):
@@ -1457,10 +1772,34 @@ class StockCardView(generics.ListCreateAPIView):
         serializer.save()
 
 
-class StockCardByInventoryView(generics.ListAPIView):
+class StockCardByInventoryView(generics.ListCreateAPIView):
     serializer_class = StockCardSerializer
 
     def get_queryset(self):
-        """Filter stock cards by printing_inventory ID"""
+        """Filter stock cards by raw_materials_inventory ID"""
         inventory_id = self.kwargs["inventory_id"]
-        return StockCard.objects.filter(printing_inventory_id=inventory_id).order_by("-issued")
+        return StockCard.objects.filter(raw_materials_inventory_id=inventory_id).order_by("-issued")
+    
+class ReportOfSuppliesAndMaterialsView(generics.ListCreateAPIView):
+    serializer_class = ReportOfSuppliesAndMaterialsIssuedSerializer
+
+    def get_queryset(self):
+        month = self.request.query_params.get('month')
+        year = self.request.query_params.get('year')
+
+        if month and year:
+            first_day = datetime(int(year), int(month), 1).date()
+            last_day = (first_day.replace(month=first_day.month % 12 + 1, day=1) - timedelta(days=1))
+        else:
+            today = now().date()
+            first_day = today.replace(day=1)
+            last_day = (first_day.replace(month=first_day.month % 12 + 1, day=1) - timedelta(days=1))
+
+        queryset = ReportOfMaterialsAndMaterialsIssued.objects.filter(date__range=[first_day, last_day])
+
+        # Attach first_day and last_day to each instance dynamically
+        for obj in queryset:
+            obj.first_day = first_day
+            obj.last_day = last_day
+
+        return queryset

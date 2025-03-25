@@ -7,6 +7,8 @@ import { InventoryDetails } from "../components/InventoryDetails.jsx";
 import { InventoryAddItem2} from "../components/InventoryAddItem2.jsx";
 import { InventoryAddItem } from "./InventoryAddInventory.jsx";
 import { FilterRequest } from "../components/FilterRequest.jsx";
+import { WIPInventory } from "./WIPInventory.jsx"
+import { RAWInventory } from "./RAWInventory.jsx";
 
 export const InventoryTable = () => {
   const [inventory, setInventory] = useState([]);
@@ -20,6 +22,55 @@ export const InventoryTable = () => {
   const [filteredItem, setFilteredItem] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
 
+  const [wipInventory, setWipInventory] = useState([])
+  const [rawInventory, setRawInventory] = useState([])
+  
+
+  const fetchWipInventory = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/api/work-in-process/");
+      const data = response.data;
+  
+      const mappedWIPInventory = data.map((wipItem) =>
+        WIPInventory({ 
+          WIPItem: wipItem, 
+          generateStockCard 
+        }) // Call as a function, NOT JSX
+      );
+  
+      setWipInventory(mappedWIPInventory);
+    } catch (error) {
+      console.error("Error fetching WIP inventory:", error);
+    }
+  };
+
+
+
+  const fetchRawInventory = async () => {
+    try {
+      const response = await axios.get("http://127.0.0.1:8000/api/raw-materials/") 
+      const data = response.data;
+
+      const mappedRawInventory = data.map((rawItem) => RAWInventory({
+        RAWItem: rawItem,
+        generateStockCard
+      }))
+
+      setRawInventory(mappedRawInventory)
+
+
+    } catch (error) {
+      console.log("Error fetching raw inventory:", error);
+    }
+  }
+
+  useEffect(() => {
+    fetchWipInventory()
+    fetchRawInventory()
+  }, [])
+  
+
+  
   const fetchInventory = async () => {
     try {
       const response = await axios.get(
@@ -44,7 +95,6 @@ export const InventoryTable = () => {
           handleOnChangePaperType,
           cancelEdit,
           handleDelete,
-          generateStockCard
         })
       );
 
@@ -94,6 +144,16 @@ export const InventoryTable = () => {
   const generateStockCard = (itemId) => {
     window.open(`/stockcard?id=${itemId}`, "_blank");
   };
+  
+  const generateWIPInventory = () => {
+    window.open(`/inprocessinventory`, "_blank");
+  }
+
+  const generateRAWInventory = () => {
+    window.open(`/RawInventory`, "_blank");
+  }
+
+  
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen); // Toggle modal visibility
@@ -143,21 +203,104 @@ export const InventoryTable = () => {
     }
   };
 
-  const printingInventoryHeader = [
+  const rawInventoryHeader = [
     "Item Name",
     "Item ID",
     "Category",
-    "Ream",
-    "Price",
-    "Updated",
+    "Unit",
+    "Unit Value",
+    "Stocks",
     "Status",
     "Action",
     "Stock Card"
   ];
 
+  const rawData =[
+    {
+      "Item Name": "Looseleaf colore printing of inside pages of various unversity report/manuals, journals, brochures and others",
+      "Item ID": "001",
+      "Category": "Paper",
+      "Unit": "Ream",
+      "Price": "100",
+      "Updated": "2022-01-15",
+      "Status": "Available",
+      "Action": <Button title={"Details"} style={"bg-navy px-[1rem] py-[0.2rem] text-white rounded-2"} handleClick={() => handleDelete(1)} />,
+      "Stock Card": <Button title={"Generate"} style={"bg-[#6fb84c] px-[1rem] py-[0.2rem] text-white rounded-2"} handleClick={() => generateStockCard(1)} />
+    }
+  ]
+
+  const workInData =[
+    {
+      "Item Name": "Ink Cart, Epson C1T66300 (T6643) Magenta",
+      "Item ID": "001",
+      "Category": "Paper",
+      "Unit": "Ream",
+      "Price": "100",
+      "Updated": "2022-01-15",
+      "Status": "Available",
+      "Action": <Button title={"Details"} style={"bg-navy px-[1rem] py-[0.2rem] text-white rounded-2"} handleClick={() => handleDelete(1)} />,
+      "Stock Card": <Button title={"Generate"} style={"bg-[#6fb84c] px-[1rem] py-[0.2rem] text-white rounded-2"} handleClick={() => generateStockCard(1)} />
+    }
+  ]
+
   return (
-    <div className="printing-inventory flex">
-      <div className="printing-inventory-content flex flex-col w-full max-w-[1300px] m-auto my-0">
+    <div className="printing-inventory flex flex-col">
+      <div className="work-in-process-inventory-content flex flex-col w-full max-w-[1300px] m-auto my-0">
+      <h1 className="text-navy text-[clamp(1.5rem,3vw,3rem)] font-bold mb-20 mt-20">
+          Work In Process
+        </h1>
+        <div className="flex w-full max-w-[100%] justify-between">
+          <div className="flex justify-between w-full  max-w-[40rem]">
+            <div className="flex flex-col gap-2">
+              <p>Search</p>
+              <input
+                type="text"
+                className="py-[1rem] pl-[1rem] border-black border-[1px] rounded-[5px]"
+                placeholder="Search..."
+                onChange={(e) => setFilteredItem(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <p>Category</p>
+              <select
+                name=""
+                id=""
+                className="px-[2rem] py-[1rem] rounded-[5px]"
+                style={{ boxShadow: "0px 0px 4px rgba(0, 0, 0, 0.25)" }}
+              >
+                <option value="">Paper</option>
+                <option value="">Ink</option>
+              </select>
+            </div>
+            <FilterRequest
+              title="Status"
+              selectVal={selectedStatus}
+              options={status}
+              handleSelectChange={setSelectedStatus}
+              style={'mb-2'}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col">
+        <GenericTable
+          headers={rawInventoryHeader}
+          data={wipInventory}
+          thStyle={"text-white bg-[#18163a]"}
+        ></GenericTable>
+        <Button
+            title={"Generate WIP Inventory Report"}
+            style={
+              "bg-blue-500 text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white hover:bg-navy"
+            }
+            onClick={generateWIPInventory}
+          ></Button>
+        </div>
+      </div>
+      <div className="raw-material-inventory-content flex flex-col w-full max-w-[1300px] m-auto my-0">
+      <h1 className="text-navy text-[clamp(1.5rem,3vw,3rem)] font-bold mb-20 mt-20">
+          Raw Material
+        </h1>
         <div className="flex w-full max-w-[100%] justify-between">
           <div className="flex justify-between w-full  max-w-[40rem]">
             <div className="flex flex-col gap-2">
@@ -193,25 +336,41 @@ export const InventoryTable = () => {
           <Button
             title={"Add Inventory"}
             style={
-              "bg-[#6fb84c] text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white"
+              "bg-[#6fb84c] text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white hover:bg-[#006400]"
             }
             onClick={toggleModal}
           ></Button>
           <Button
             title={"Add Item"}
             style={
-              "bg-blue-500 text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white"
+              "bg-blue-500 text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white hover:bg-navy"
             }
             onClick={toggleAddItemModal}
+          ></Button>
+          <Button
+            title={"Transfer Item"}
+            style={
+              "bg-[#f7b41f] text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white hover:bg-[#006400]"
+            }
+            onClick={toggleModal}
           ></Button>
           </div>
         </div>
 
+        <div className="flex flex-col">
         <GenericTable
-          headers={printingInventoryHeader}
-          data={filteredData}
+          headers={rawInventoryHeader}
+          data={rawInventory}
           thStyle={"text-white bg-[#18163a]"}
         ></GenericTable>
+        <Button
+            title={"Generate Raw Inventory Report"}
+            style={
+              "bg-blue-500 text-center h-[fit-content] px-[2rem] py-[1rem] rounded-[5px] self-end font-bold text-white hover:bg-navy"
+            }
+            onClick={generateRAWInventory}
+          ></Button>
+        </div>
       </div>
       {isModalOpen && (
         <div className="modal-overlay fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
