@@ -23,6 +23,8 @@ Ensure you have the following installed:
 ```sh
 cd server
 cd upps\Scripts\activate
+cd ../../
+cd upps
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
