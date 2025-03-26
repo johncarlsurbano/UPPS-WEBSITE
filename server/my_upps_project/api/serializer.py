@@ -1197,125 +1197,198 @@ class DisplayBillRequestDetailsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_request_details(self, obj):
-        # Check if the Bill has a PersonnelPrintRequest or BookBindingPersonnelRequest
+        """Retrieve appropriate request details"""
         if obj.request:
             return DisplayPersonnelPrintRequestSerializer(obj.request).data
         elif obj.book_bind_request:
             return DisplayBookBindPersonnelRequestSerializer(obj.book_bind_request).data
         elif obj.lamination_request:
-             return DisplayLaminationPersonnelRequestSerializer(obj.lamination_request).data 
-        return None  # Return None if neither request type is available
+            return DisplayLaminationPersonnelRequestSerializer(obj.lamination_request).data
+        return None  
 
     def get_unitcost(self, obj):
-        # Check if it's a print request or a book bind request and calculate unit cost accordingly
+        """Retrieve unit cost based on paper type price"""
+        work_in_process_inventory = None
+
         if obj.request:
-            print_request_details = obj.request.print_request_details
-            base_price = print_request_details.paper_type.price
-            return base_price
-        
+            work_in_process_inventory = getattr(obj.request.print_request_details, "work_in_process_inventory", None)
         elif obj.book_bind_request:
-            book_binding_request_details = obj.book_bind_request.book_binding_request_details
-            return book_binding_request_details.paper_type.price
-        
+            work_in_process_inventory = getattr(obj.book_bind_request.book_binding_request_details, "work_in_process_inventory", None)
         elif obj.lamination_request:
-             lamination_request_details = obj.lamination_request.lamination_request_details
-             return lamination_request_details.paper_type.price
-        return 0  # Default unit cost if neither request type is available
+            work_in_process_inventory = getattr(obj.lamination_request.lamination_request_details, "work_in_process_inventory", None)
+
+        # ✅ Handle Many-to-Many case
+        if hasattr(work_in_process_inventory, "all"):  
+            for inventory in work_in_process_inventory.all():
+                if inventory.inventory_item and inventory.inventory_item.paper_type:
+                    return inventory.inventory_item.paper_type.price  # ✅ Return first valid price
+        elif work_in_process_inventory:  
+            if work_in_process_inventory.inventory_item and work_in_process_inventory.inventory_item.paper_type:
+                return work_in_process_inventory.inventory_item.paper_type.price
+
+        return 0  
 
     def get_totalcost(self, obj):
-        # Calculate total cost based on request details
-        unitcost = self.get_unitcost(obj)
+        """Calculate total cost based on request details"""
+        unitcost = Decimal(self.get_unitcost(obj))  # ✅ Ensure unitcost is Decimal
+        total_cost = Decimal(0)  # ✅ Initialize as Decimal
 
         if obj.request:
-            print_request_details = obj.request.print_request_details
-            quantity = print_request_details.quantity
+            details = obj.request.print_request_details
             page_count = obj.request.page_count
-            total_pages = page_count * quantity
+            quantity = details.quantity
 
-            return total_pages * unitcost
-        
+            # ✅ Convert total_pages to Decimal before multiplication
+            total_pages = Decimal(page_count * quantity) / Decimal(2) if details.duplex else Decimal(page_count * quantity)
+            total_cost = total_pages * unitcost
+
         elif obj.book_bind_request:
-            book_binding_request_details = obj.book_bind_request.book_binding_request_details
-            price = book_binding_request_details.request_type.price
+            details = obj.book_bind_request.book_binding_request_details
             page_count = obj.book_bind_request.page_count
-            quantity = book_binding_request_details.quantity
-            total_pages = page_count * quantity
-            
-            return price + total_pages * unitcost
-        
-        elif obj.lamination_request:
-             lamination_request_details = obj.lamination_request.lamination_request_details
-             price = lamination_request_details.request_type.price
-             page_count = obj.lamination_request.page_count
-             quantity = lamination_request_details.quantity
-             total_pages = page_count * quantity
+            quantity = details.quantity
+            book_bind_type = details.book_bind_type.book_bind_type_name  
+            request_type_price = Decimal(details.request_type.price)  # ✅ Ensure it's Decimal
 
-             return price + total_pages * unitcost
-        
-        return 0  # Default total cost if neither request type is available
+            if book_bind_type == "Book Bind":
+                total_cost = request_type_price * Decimal(quantity)  
+            else:
+                total_pages = Decimal(page_count * quantity)
+                total_cost = (total_pages * unitcost) + (request_type_price * Decimal(quantity))
+
+        elif obj.lamination_request:
+            details = obj.lamination_request.lamination_request_details
+            page_count = obj.lamination_request.page_count
+            quantity = details.quantity
+            total_pages = Decimal(page_count * quantity)
+            total_cost = total_pages * unitcost
+
+        return total_cost
 
     def create(self, validated_data):
-          # Create the Bill instance
-          bill = super().create(validated_data)
+        """Create the Bill instance and deduct inventory from WorkInProcessInventory"""
+        bill = super().create(validated_data)
 
-          # Handle inventory deduction based on the type of request (print, book bind, or lamination)
-          if bill.request:
-               print_request_details = bill.request.print_request_details
-               paper_type = print_request_details.paper_type
-               quantity = print_request_details.quantity
-               page_count = bill.request.page_count
+        work_in_process_inventory = None
+        total_sheets_required = 0
+        paper_type_id = None
+        ring_binder_type_id = None
 
-               # Adjust total_pages for duplex
-               if print_request_details.duplex:
-                    total_pages = (page_count * quantity) / 2
-               else:
-                    total_pages = page_count * quantity
+        if bill.request:
+            details = bill.request.print_request_details
+            work_in_process_inventory = details.work_in_process_inventory  # ✅ No `.all()`
+            page_count = bill.request.page_count
+            quantity = details.quantity
 
-               # Retrieve or create the inventory for the paper type
-               inventory, created = PrintingInventory.objects.get_or_create(
-                    paper_type=paper_type,
-                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-               )
+            # ✅ Calculate total sheets required
+            total_sheets_required = (page_count * quantity) / 2 if details.duplex else page_count * quantity
 
-               # Subtract the total pages from onHand and update the inventory status
-               inventory.onHand = max(0, inventory.onHand - math.ceil(total_pages))
-               inventory.save()
+            # ✅ Find the correct `paper_type`
+            paper_type_id = (
+                work_in_process_inventory.inventory_item.paper_type.id
+                if work_in_process_inventory and work_in_process_inventory.inventory_item and work_in_process_inventory.inventory_item.paper_type
+                else None
+            )
 
-          elif bill.book_bind_request:
-               book_binding_request_details = bill.book_bind_request.book_binding_request_details
-               quantity = book_binding_request_details.quantity
-               paper_type = book_binding_request_details.paper_type
-               page_count = bill.book_bind_request.page_count
-               total_pages = page_count * quantity
+            # ✅ Trigger FIFO Deduction if Paper Type Exists
+            if paper_type_id and total_sheets_required > 0:
+                print(f"🚀 Triggering FIFO Deduction: Paper Type ID={paper_type_id}, Quantity={total_sheets_required}")
+                self.trigger_fifo_deduction(paper_type_id, None, total_sheets_required)  # ✅ Deduct paper
 
-               # Retrieve or create the inventory for the paper type
-               inventory, created = PrintingInventory.objects.get_or_create(
-                    paper_type=paper_type,
-                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-               )
 
-               # Subtract the total pages from onHand and update the inventory status
-               inventory.onHand = max(0, inventory.onHand - total_pages)
-               inventory.save()
+        elif bill.book_bind_request:
+            details = bill.book_bind_request.book_binding_request_details
+            work_in_process_inventory = details.work_in_process_inventory.all()
+            page_count = bill.book_bind_request.page_count
+            quantity = details.quantity
+            book_bind_type = details.book_bind_type  
+            request_type = details.request_type  
 
-          elif bill.lamination_request:
-               lamination_request_details = bill.lamination_request.lamination_request_details
-               page_count = bill.lamination_request.page_count
-               quantity = lamination_request_details.quantity
-               paper_type = lamination_request_details.paper_type
-               total_pages = page_count * quantity
+            # ✅ Calculate total sheets required **for Computer Book Bind**
+            if book_bind_type.book_bind_type_name == "Computer Book Bind":
+                total_sheets_required = page_count * quantity  # **Fix: Ensure it correctly assigns total sheets**
 
-               # Retrieve or create the inventory for the paper type
-               inventory, created = PrintingInventory.objects.get_or_create(
-                    paper_type=paper_type,
-                    defaults={'onHand': 0, 'status': 'Out-of-Stock'}
-               )
+            # ✅ Find the correct `paper_type` and `ring_binder_type`
+            paper_type_id = work_in_process_inventory.filter(
+                inventory_item__paper_type__isnull=False
+            ).values_list("inventory_item__paper_type", flat=True).first()
 
-               # Subtract the total pages from onHand and update the inventory status
-               inventory.onHand = max(0, inventory.onHand - total_pages)
-               inventory.save()
+            ring_binder_type_id = work_in_process_inventory.filter(
+                inventory_item__ring_binder_type__isnull=False
+            ).values_list("inventory_item__ring_binder_type", flat=True).first()
 
-          return bill    
+            ring_binder_quantity = quantity  # ✅ Fix: Use correct quantity for ring binders
+
+
+            # ✅ Deduction Conditions
+            if book_bind_type.book_bind_type_name == "Book Bind":
+                paper_type_id = None  
+
+            if book_bind_type.book_bind_type_name == "Computer Book Bind" and request_type.request_type_name == "Ring Bound":
+                # ✅ Deduct paper only once
+                if paper_type_id:
+                    self.trigger_fifo_deduction(paper_type_id, None, total_sheets_required)  # ✅ Only call once
+
+                # ✅ Deduct ring binder only once
+                if ring_binder_type_id:
+                    self.trigger_fifo_deduction(None, ring_binder_type_id, quantity)
+
+            elif book_bind_type.book_bind_type_name == "Computer Book Bind":
+                self.trigger_fifo_deduction(paper_type_id, None, total_sheets_required)  
+            elif request_type.request_type_name == "Ring Bound":
+                self.trigger_fifo_deduction(None, ring_binder_type_id, ring_binder_quantity)  
+
+        elif bill.lamination_request:
+            details = bill.lamination_request.lamination_request_details
+            work_in_process_inventory = details.work_in_process_inventory.all()
+            page_count = bill.lamination_request.page_count
+            quantity = details.quantity
+            total_sheets_required = page_count * quantity  # ✅ Fix: Ensure sheets are counted
+
+        print(f"🚀 FINAL FIFO Deduction: paper_type_id={paper_type_id}, ring_binder_type_id={ring_binder_type_id}, quantity={total_sheets_required}")
+
+        return bill
+
+
+    def trigger_fifo_deduction(self, paper_type_id=None, ring_binder_type_id=None, quantity=0):
+        """Trigger FIFO stock deduction for paper and/or ring binder."""
+        fifo_deduction_url = "http://127.0.0.1:8000/api/deduct/fifo/"
+        print(f"⚡ FIFO Deduction Called: paper_type_id={paper_type_id}, ring_binder_type_id={ring_binder_type_id}, quantity={quantity}")
+
+        if quantity <= 0:
+            print("⚠ No deduction needed: Quantity is zero")
+            return  
+
+        payloads = []
+
+        if paper_type_id:
+            payloads.append({
+                "paper_type_id": paper_type_id,
+                "quantity": quantity
+            })
+
+        if ring_binder_type_id:
+            payloads.append({
+                "ring_binder_type_id": ring_binder_type_id,
+                "quantity": quantity
+            })
+
+        print(f"🚀 Sending FIFO Deduction Request: {payloads}")
+
+        for payload in payloads:
+            try:
+                response = requests.post(fifo_deduction_url, json=payload)
+                response_data = response.json()
+
+                if response.status_code != 200:
+                    print(f"❌ FIFO Deduction Failed: {response_data}")
+                    raise serializers.ValidationError({"error": response_data.get("error", "Failed to deduct stock")})
+                else:
+                    print(f"✅ FIFO Deduction Successful: {response_data}")
+
+            except requests.RequestException as e:
+                print(f"❌ Request Exception: {e}")
+                raise serializers.ValidationError({"error": f"Failed to connect to FIFO Deduction API: {str(e)}"})
+    
 
 # class JobOrderSerializer(serializers.ModelSerializer):
 #     # Use SerializerMethodField to conditionally display either print or book bind request details
